@@ -416,6 +416,19 @@
 .cal-scope #status-bar.ok{border-left-color:var(--green);}
 .cal-scope .date{font-size:13px; color:var(--steel); white-space:nowrap; flex-shrink:0;}
 
+.cal-scope .cal-filter-group{
+  display:flex; align-items:center; gap:.5rem; flex-shrink:0;
+}
+.cal-scope .cal-filter-label{
+  font-size:11px; color:var(--steel); text-transform:uppercase;
+  letter-spacing:.07em; font-weight:500;
+}
+.cal-scope .cal-filter-group select{
+  background:var(--white); border:1px solid #D8D8D8; color:var(--dark);
+  font-family:'Roboto', sans-serif; font-size:12px; padding:.4rem .7rem;
+  border-radius:4px; outline:none; cursor:pointer; max-width:180px;
+}
+
 .cal-scope .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px;}
 .cal-scope .kpi{background:var(--white); border-radius:10px; padding:18px 20px; border-top:4px solid var(--orange);}
 .cal-scope .kpi .label{font-size:12px; color:var(--gray-dark); text-transform:uppercase; letter-spacing:.5px;}
@@ -1353,11 +1366,17 @@ if (document.readyState === 'loading') {
 <div class="cal-sync-bar">
   <button class="cal-btn-sync" id="btn-cal-sync" onclick="refreshCalificacion()">↻ Actualizar datos</button>
   <div id="status-bar">Conectando con Google Sheets...</div>
+  <div class="cal-filter-group">
+    <span class="cal-filter-label">Período</span>
+    <select id="month-filter" onchange="onMonthFilterChange()">
+      <option value="">Todos</option>
+    </select>
+  </div>
   <div class="date" id="last-update">Cargando datos...</div>
 </div>
 
 <div class="kpis">
-  <div class="kpi"><div class="label">Sedes evaluadas</div><div class="value" id="kpi-sedes">&ndash;</div><div class="sub">con notificación registrada</div></div>
+  <div class="kpi"><div class="label">Sedes evaluadas</div><div class="value" id="kpi-sedes">&ndash;</div><div class="sub" id="kpi-sedes-sub">con notificación registrada</div></div>
   <div class="kpi green"><div class="label">Promedio general</div><div class="value" id="kpi-promedio">&ndash;</div><div class="sub">sobre 100 puntos</div></div>
   <div class="kpi amber" id="kpi-atencion-box" onclick="toggleCalDetail('atencion')" style="cursor:pointer">
     <div class="label">En atención <span style="opacity:.5">▾</span></div>
@@ -1475,9 +1494,18 @@ const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?forma
 const SCORE_MAP = { "bueno": 100, "regular": 70, "falla": 0 };
 const EXCLUDE_VALUES = ["no tiene", ""];
 
+// Cantidad total de sedes activas en la red CORE (CABA + GBA + internacionales).
+// Es manual porque el form solo refleja sedes YA evaluadas, no el total de la red.
+// Actualizar este número cuando se abran o cierren sedes.
+const TOTAL_SEDES_CORE = 36;
+
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
 let sedesData = [];
 let sectorOrder = [];
 let currentSort = { key: 'score', dir: 'desc' };
+let rawRows = [];
+let rawFields = [];
 
 const SORT_ACCESSORS = {
   sede: d => (d.sede || '').toLowerCase(),
@@ -1533,6 +1561,36 @@ function parseTimestamp(str){
   return isNaN(t) ? 0 : t;
 }
 
+// Clave "AAAA-MM" a partir de la misma marca temporal, para agrupar/filtrar por mes.
+function monthKeyFromStr(str){
+  const ts = parseTimestamp(str);
+  if (!ts) return null;
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function monthLabel(mk){
+  const [y, mo] = mk.split('-');
+  return MESES[+mo - 1] + ' ' + y;
+}
+
+// Puebla el <select> de período con los meses presentes en los datos, más recientes primero.
+// Preserva la selección actual del usuario si sigue siendo válida.
+function populateMonthFilter(rows, tsCol){
+  const sel = document.getElementById('month-filter');
+  if (!sel) return;
+  const current = sel.value;
+  const months = new Set();
+  rows.forEach(r => {
+    const mk = monthKeyFromStr(r[tsCol]);
+    if (mk) months.add(mk);
+  });
+  const sorted = [...months].sort().reverse();
+  sel.innerHTML = '<option value="">Todos los períodos</option>' +
+    sorted.map(mk => `<option value="${mk}">${monthLabel(mk)}</option>`).join('');
+  if (sorted.includes(current)) sel.value = current;
+}
+
 function classify(score){
   if(score >= 90) return {label:"Óptimo", cls:"green"};
   if(score >= 75) return {label:"Bueno", cls:"green"};
@@ -1564,7 +1622,9 @@ function loadData(){
     skipEmptyLines: true,
     complete: function(results){
       try{
-        processData(results.data, results.meta.fields);
+        rawRows = results.data;
+        rawFields = results.meta.fields;
+        processData(rawRows, rawFields);
         setStatus("Conectado a Google Sheets — datos actualizados.", "ok");
       }catch(e){
         setStatus("Se conectó al Sheet pero hubo un error al procesar las columnas: " + e.message, "error");
@@ -1580,6 +1640,11 @@ function loadData(){
   });
 }
 window.refreshCalificacion = loadData;
+
+function onMonthFilterChange(){
+  if (rawRows.length) processData(rawRows, rawFields);
+}
+window.onMonthFilterChange = onMonthFilterChange;
 
 function setStatus(msg, cls){
   const el = document.getElementById("status-bar");
@@ -1597,9 +1662,13 @@ function processData(rows, fields){
   const sectorCols = fields.filter(f => /^Sector\s+\S+/i.test(f));
   sectorOrder = [...new Set(sectorCols.map(sectorCodeFromHeader))];
 
+  populateMonthFilter(rows, tsCol);
+  const monthVal = document.getElementById('month-filter').value;
+  const periodRows = monthVal ? rows.filter(r => monthKeyFromStr(r[tsCol]) === monthVal) : rows;
+
   const bySede = {};
   const bySedeTs = {};
-  rows.forEach(row => {
+  periodRows.forEach(row => {
     const sede = (row[sedeCol] || "").trim();
     if(!sede) return;
     const ts = parseTimestamp(row[tsCol]);
@@ -1667,10 +1736,16 @@ function renderKPIs(){
   const avg = total ? Math.round(sedesData.reduce((a,d) => a+d.score,0) / total) : 0;
   const atencion = sedesData.filter(d => d.score >= 60 && d.score < 75).length;
   const criticas = sedesData.filter(d => d.score < 60).length;
-  document.getElementById("kpi-sedes").textContent = total;
+  document.getElementById("kpi-sedes").textContent = total + " / " + TOTAL_SEDES_CORE;
   document.getElementById("kpi-promedio").textContent = avg;
   document.getElementById("kpi-atencion").textContent = atencion;
   document.getElementById("kpi-criticas").textContent = criticas;
+
+  const monthVal = document.getElementById('month-filter').value;
+  const sub = document.getElementById('kpi-sedes-sub');
+  sub.textContent = monthVal
+    ? 'evaluadas en ' + monthLabel(monthVal).toLowerCase()
+    : 'sobre el total de la red CORE';
 }
 
 function calDetailData(which){

@@ -374,17 +374,47 @@
 }
 
 
+.cal-scope .cal-sync-bar{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:24px;
+  flex-wrap:wrap;
+}
+.cal-scope .cal-btn-sync{
+  background:var(--orange);
+  border:none;
+  color:#fff;
+  font-family:'Roboto', sans-serif;
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  padding:.55rem 1.1rem;
+  border-radius:4px;
+  cursor:pointer;
+  transition:opacity .2s;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-shrink:0;
+}
+.cal-scope .cal-btn-sync:hover{opacity:.85;}
+.cal-scope .cal-btn-sync:disabled{opacity:.4; cursor:not-allowed;}
+
 .cal-scope #status-bar{
   background:var(--white);
   border-left:4px solid var(--orange);
-  padding:12px 18px;
+  padding:8px 16px;
   border-radius:6px;
   font-size:13px;
   color:var(--gray-dark);
-  margin-bottom:24px;
+  flex:1;
+  min-width:200px;
 }
 .cal-scope #status-bar.error{border-left-color:var(--red); color:var(--red);}
 .cal-scope #status-bar.ok{border-left-color:var(--green);}
+.cal-scope .date{font-size:13px; color:var(--steel); white-space:nowrap; flex-shrink:0;}
 
 .cal-scope .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px;}
 .cal-scope .kpi{background:var(--white); border-radius:10px; padding:18px 20px; border-top:4px solid var(--orange);}
@@ -1294,10 +1324,11 @@ if (document.readyState === 'loading') {
 
 <div id="tab-calificacion" class="tab-panel">
 <div class="cal-scope">
-<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-  <div class="date" id="last-update" style="font-size:13px;color:var(--gray-dark)">Cargando datos...</div>
+<div class="cal-sync-bar">
+  <button class="cal-btn-sync" id="btn-cal-sync" onclick="refreshCalificacion()">↻ Actualizar datos</button>
+  <div id="status-bar">Conectando con Google Sheets...</div>
+  <div class="date" id="last-update">Cargando datos...</div>
 </div>
-<div id="status-bar">Conectando con Google Sheets...</div>
 
 <div class="kpis">
   <div class="kpi"><div class="label">Sedes evaluadas</div><div class="value" id="kpi-sedes">&ndash;</div><div class="sub">con notificación registrada</div></div>
@@ -1419,6 +1450,9 @@ function sectorFullName(code){
 }
 
 function loadData(){
+  const btn = document.getElementById("btn-cal-sync");
+  if (btn) btn.disabled = true;
+  setStatus('<span class="spin"></span>&nbsp;Sincronizando...', '');
   Papa.parse(CSV_URL, {
     download: true,
     header: true,
@@ -1430,17 +1464,21 @@ function loadData(){
       }catch(e){
         setStatus("Se conectó al Sheet pero hubo un error al procesar las columnas: " + e.message, "error");
         console.error(e);
+      } finally {
+        if (btn) btn.disabled = false;
       }
     },
     error: function(err){
       setStatus("No se pudo conectar al Google Sheet. Verificá que esté publicado/compartido como público. (" + err + ")", "error");
+      if (btn) btn.disabled = false;
     }
   });
 }
+window.refreshCalificacion = loadData;
 
 function setStatus(msg, cls){
   const el = document.getElementById("status-bar");
-  el.textContent = msg;
+  el.innerHTML = msg;
   el.className = cls || "";
 }
 

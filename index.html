@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Mantenimiento y Obras · CORE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@700&family=Roboto:wght@300;400;500;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+    --orange:  #FF5C33;
+    --dark:    #333333;
+    --mid:     #474747;
+    --grey:    #9DA5A8;
+    --light:   #C9D1D3;
+    --white:   #FFFFFF;
+    --bg:      #1a1a1a;
+    --bg2:     #242424;
+    --bg3:     #2e2e2e;
+    --border:  rgba(255,255,255,0.08);
+    --text:    #F0EEEA;
+    --muted:   #9DA5A8;
+    --exec:    #4CAF7D;
+    --proc:    #FF5C33;
+    --font:    'Roboto', sans-serif;
+    --gray-dark: #474747;
+    --steel:     #9DA5A8;
+    --green:     #3FA66B;
+    --green-bg:  #E7F5EC;
+    --amber:     #E0A526;
+    --amber-bg:  #FBF1DD;
+    --red:       #D9483A;
+    --red-bg:    #FCE7E4;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: #111111;
+    border-bottom: 2px solid var(--orange);
+    padding: 0 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    gap: 1rem;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .logo-img { height: 26px; width: auto; }
+  .logo-text {
+    font-family: 'Poppins', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: .05em;
+    line-height: 1;
+  }
+  .header-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255,255,255,0.15);
+  }
+  .header-title {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .header-title strong {
+    color: var(--white);
+    font-weight: 500;
+  }
+
+  /* TABS */
+  .tabs-bar {
+    background: #111111;
+    border-bottom: 1px solid var(--border);
+    padding: 0 2.5rem;
+    display: flex;
+    gap: 4px;
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: .9rem 1.1rem .8rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* CAL-SCOPE base reset so light theme reads correctly inside dark page */
+  .cal-scope { font-size: 14px; line-height: 1.4; }
+  .cal-scope * { box-sizing: border-box; }
+
+
+  /* SYNC BAR */
+  .sync-bar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: .6rem 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .btn-sync {
+    background: var(--orange);
+    border: none;
+    color: white;
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    padding: .45rem 1.1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity .2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-sync:hover { opacity: .85; }
+  .btn-sync:disabled { opacity: .4; cursor: not-allowed; }
+  .sync-status {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: .04em;
+  }
+  .sync-status.ok  { color: var(--exec); }
+  .sync-status.err { color: #ff6b6b; }
+  .spin {
+    display: inline-block; width: 10px; height: 10px;
+    border: 2px solid currentColor; border-top-color: transparent;
+    border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* DATE FILTER */
+  .filter-group {
+    display: flex; align-items: center; gap: .5rem; margin-left: auto;
+  }
+  .filter-label {
+    font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .07em; font-weight: 500;
+  }
+  .date-wrap {
+    display: flex; align-items: center; gap: .4rem;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 4px; padding: .35rem .7rem;
+  }
+  .date-wrap span { font-size: 11px; color: var(--muted); }
+  input[type="date"] {
+    background: transparent; border: none; color: var(--text);
+    font-family: var(--font); font-size: 11px; outline: none;
+    cursor: pointer; color-scheme: dark;
+  }
+  .btn-reset {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); font-family: var(--font); font-size: 11px;
+    text-transform: uppercase; letter-spacing: .07em;
+    padding: .4rem .8rem; border-radius: 4px; cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-reset:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* MAIN */
+  main { padding: 2rem 2.5rem; }
+
+  .range-label {
+    font-size: 11px; color: var(--muted); letter-spacing: .05em;
+    text-transform: uppercase; margin-bottom: 1.5rem;
+  }
+  .range-label strong { color: var(--orange); font-weight: 500; }
+
+  /* KPI ROW */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) 1.3fr 1.2fr;
+    gap: 10px;
+    margin-bottom: 1.75rem;
+  }
+  .kpi {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--orange); opacity: 0;
+    transition: opacity .2s;
+  }
+  .kpi:hover::before { opacity: 1; }
+  .kpi-label {
+    font-size: 10px; font-weight: 500; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .1em; margin-bottom: .6rem;
+  }
+  .kpi-val {
+    font-size: 2.5rem; font-weight: 700; line-height: 1; color: var(--white);
+  }
+  .kpi-val.orange { color: var(--orange); }
+  .kpi-val.green  { color: var(--exec); }
+  .kpi-sub {
+    font-size: 11px; color: var(--muted); margin-top: .4rem; font-weight: 300;
+  }
+  /* Elem Deportivos KPI — special */
+  .kpi.kpi-alert {
+    border-color: rgba(255,92,51,.25);
+    background: linear-gradient(135deg, var(--bg2) 60%, rgba(255,92,51,.06));
+  }
+  .kpi.kpi-alert .kpi-val { color: var(--orange); }
+  .kpi-alert-tag {
+    display: inline-block; margin-top: .5rem;
+    background: rgba(255,92,51,.15); color: var(--orange);
+    font-size: 9px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 3px;
+  }
+
+  /* DETAIL TABLE (En proceso / Postergados-Pendientes) */
+  .detail-section {
+    display: none;
+    margin-bottom: 1.75rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    animation: slideDown .25s ease;
+  }
+  .detail-section.open { display: block; }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .detail-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .detail-title {
+    font-size: 11px; font-weight: 700; color: var(--text);
+    text-transform: uppercase; letter-spacing: .08em;
+  }
+  .detail-close {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    font-size: 11px; padding: .3rem .7rem; border-radius: 4px; cursor: pointer;
+  }
+  .detail-close:hover { border-color: var(--orange); color: var(--orange); }
+  .detail-table-wrap { overflow-x: auto; max-height: 420px; overflow-y: auto; }
+  table.detail-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  table.detail-table thead th {
+    text-align: left; padding: 6px 10px; color: var(--muted);
+    font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 9px;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg2);
+    white-space: nowrap;
+  }
+  table.detail-table tbody td {
+    padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text); vertical-align: top;
+  }
+  table.detail-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .detail-table a { color: #5B9CF6; text-decoration: none; }
+  .detail-table a:hover { text-decoration: underline; }
+  .status-pill {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .status-pill.proceso   { background: rgba(255,92,51,.15); color: var(--orange); }
+  .status-pill.postergado{ background: rgba(255,255,255,.08); color: #aaa; }
+  .status-pill.pendiente { background: rgba(232,51,46,.18); color: #E8332E; }
+
+  /* CHARTS */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  .card.full, .card[style*="grid-column: 1"] { grid-column: 1 / -1; }
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: rgba(255,255,255,0.14); }
+  .card.full { grid-column: 1 / -1; }
+  .card-title {
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .12em; margin-bottom: 1rem;
+  }
+  .legend {
+    display: flex; gap: 14px; margin-bottom: .75rem; flex-wrap: wrap;
+  }
+  .legend span {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--muted); font-weight: 400;
+  }
+  .lsq { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .chart-wrap { position: relative; }
+  .h160 { height: 160px; }
+  .h340 { height: 340px; }
+  .empty {
+    display: none; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--muted); height: 100%;
+    position: absolute; inset: 0;
+  }
+
+  /* footer */
+  footer {
+    padding: 1.25rem 2.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--muted);
+    display: flex; align-items: center; gap: .5rem;
+  }
+  footer span { color: var(--orange); font-weight: 700; }
+
+  @media (max-width: 720px) {
+    header, .sync-bar, main { padding-left: 1rem; padding-right: 1rem; }
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .card.full { grid-column: 1; }
+    .filter-group { margin-left: 0; width: 100%; }
+  }
+
+  /* ===== CALIFICACIÓN DE SEDES (cal-scope) ===== */
+.cal-scope{
+  font-family:'Roboto', sans-serif;
+  background:#E3E5E5;
+  color:var(--dark);
+  padding:32px;
+}
+.cal-scope h1, .cal-scope h2, .cal-scope h3, .cal-scope .title-font{
+  font-family:'Poppins','Effra', sans-serif;
+  font-weight:700;
+}
+
+
+.cal-scope #status-bar{
+  background:var(--white);
+  border-left:4px solid var(--orange);
+  padding:12px 18px;
+  border-radius:6px;
+  font-size:13px;
+  color:var(--gray-dark);
+  margin-bottom:24px;
+}
+.cal-scope #status-bar.error{border-left-color:var(--red); color:var(--red);}
+.cal-scope #status-bar.ok{border-left-color:var(--green);}
+
+.cal-scope .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px;}
+.cal-scope .kpi{background:var(--white); border-radius:10px; padding:18px 20px; border-top:4px solid var(--orange);}
+.cal-scope .kpi .label{font-size:12px; color:var(--gray-dark); text-transform:uppercase; letter-spacing:.5px;}
+.cal-scope .kpi .value{font-size:30px; font-weight:700; margin-top:6px; color:var(--dark);}
+.cal-scope .kpi .sub{font-size:12px; color:var(--steel); margin-top:4px;}
+.cal-scope .kpi.green{border-top-color:var(--green);}
+.cal-scope .kpi.amber{border-top-color:var(--amber);}
+.cal-scope .kpi.red{border-top-color:var(--red);}
+
+.cal-scope .section{margin-bottom:32px;}
+.cal-scope .section h2{font-size:16px; color:var(--dark); margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+.cal-scope .section h2::before{content:""; width:6px; height:18px; background:var(--orange); display:inline-block; border-radius:2px;}
+
+.cal-scope .table-card{background:var(--white); border-radius:10px; overflow:hidden;}
+.cal-scope table{width:100%; border-collapse:collapse; font-size:13px;}
+.cal-scope thead tr{background:var(--dark); color:var(--white);}
+.cal-scope thead th{padding:12px 14px; text-align:left; font-weight:500; font-size:12px; text-transform:uppercase; letter-spacing:.4px; cursor:pointer; user-select:none;}
+.cal-scope tbody tr{border-bottom:1px solid #ECEDED; cursor:pointer;}
+.cal-scope tbody tr:last-child{border-bottom:none;}
+.cal-scope tbody td{padding:11px 14px; vertical-align:middle;}
+.cal-scope tbody tr:hover{background:#FAFAFA;}
+.cal-scope .rank-num{font-weight:700; color:var(--steel); width:24px; display:inline-block;}
+.cal-scope .score-pill{display:inline-block; min-width:46px; text-align:center; padding:4px 10px; border-radius:20px; font-weight:700; font-size:13px;}
+.cal-scope .score-pill.green{background:var(--green-bg); color:var(--green);}
+.cal-scope .score-pill.amber{background:var(--amber-bg); color:var(--amber);}
+.cal-scope .score-pill.red{background:var(--red-bg); color:var(--red);}
+.cal-scope .tag{display:inline-block; padding:3px 10px; border-radius:5px; font-size:11px; font-weight:500;}
+.cal-scope .tag.green{background:var(--green-bg); color:var(--green);}
+.cal-scope .tag.amber{background:var(--amber-bg); color:var(--amber);}
+.cal-scope .tag.red{background:var(--red-bg); color:var(--red);}
+.cal-scope .bar-track{background:#ECEDED; border-radius:4px; height:6px; width:90px; overflow:hidden;}
+.cal-scope .bar-fill{height:100%; border-radius:4px;}
+
+.cal-scope .detail-grid{display:grid; grid-template-columns: 1.1fr 1fr; gap:20px;}
+.cal-scope .detail-card{background:var(--white); border-radius:10px; padding:22px; min-height:200px;}
+.cal-scope .detail-card .sede-name{font-size:18px; font-weight:700; color:var(--dark);}
+.cal-scope .detail-card .sede-meta{font-size:12px; color:var(--steel); margin-bottom:18px;}
+.cal-scope .sector-row{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid #F1F1F1; gap:10px;}
+.cal-scope .sector-row:last-child{border-bottom:none;}
+.cal-scope .sector-row .name{font-size:13px; color:var(--gray-dark); width:140px; flex-shrink:0;}
+.cal-scope .sector-row .score-mini{font-size:13px; font-weight:700; width:36px; text-align:right;}
+.cal-scope .action-box{margin-top:16px; border-radius:6px; padding:10px 14px; font-size:12px;}
+.cal-scope .action-box.red{background:var(--red-bg); color:var(--red);}
+.cal-scope .action-box.amber{background:var(--amber-bg); color:var(--amber);}
+.cal-scope .action-box.green{background:var(--green-bg); color:var(--green);}
+
+.cal-scope .legend-card{background:var(--dark); border-radius:10px; padding:22px; color:var(--white);}
+.cal-scope .legend-card h3{font-size:14px; margin-bottom:14px; color:var(--white);}
+.cal-scope .legend-row{display:flex; align-items:flex-start; gap:10px; margin-bottom:14px;}
+.cal-scope .legend-dot{width:10px; height:10px; border-radius:50%; margin-top:4px; flex-shrink:0;}
+.cal-scope .legend-row .ltitle{font-size:13px; font-weight:700; color:var(--white);}
+.cal-scope .legend-row .ldesc{font-size:11.5px; color:var(--light); line-height:1.5; margin-top:2px;}
+.cal-scope .scoring-box{margin-top:18px; padding-top:18px; border-top:1px solid var(--gray-dark);}
+.cal-scope .scoring-box .stitle{font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--steel); margin-bottom:8px;}
+.cal-scope .scoring-box .srow{display:flex; justify-content:space-between; font-size:12px; color:var(--light); padding:4px 0;}
+.cal-scope .scoring-box .srow b{color:var(--white);}
+
+.cal-scope #search-input{
+  width:100%; max-width:280px; padding:9px 12px; border-radius:6px; border:1px solid var(--light);
+  font-family:'Roboto'; font-size:13px; margin-bottom:14px;
+}
+
+.cal-scope footer{margin-top:8px; font-size:11px; color:var(--steel); text-align:center;}
+.cal-scope .loader{font-size:13px; color:var(--steel); padding:20px; text-align:center;}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <span class="logo-text">CORE</span>
+    <div class="header-divider"></div>
+    <div class="header-title"><strong>Dashboard</strong> de Mantenimiento y Obras</div>
+  </div>
+</header>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" id="btn-tab-mantenimiento" onclick="switchTab('mantenimiento')">Mantenimiento</button>
+  <button class="tab-btn" id="btn-tab-calificacion" onclick="switchTab('calificacion')">Calificación de sedes</button>
+</div>
+
+<div id="tab-mantenimiento" class="tab-panel active">
+<div class="sync-bar">
+  <button class="btn-sync" id="btn-sync" onclick="syncFromSheet()">
+    ↻ Actualizar datos
+  </button>
+  <span class="sync-status" id="sync-status">Datos embebidos · presioná para sincronizar</span>
+  <div class="filter-group">
+    <span class="filter-label">Período</span>
+    <div class="date-wrap">
+      <input type="date" id="date-from" value="2026-05-05">
+      <span>→</span>
+      <input type="date" id="date-to" value="2026-05-15">
+    </div>
+    <span class="filter-label" style="margin-left:.5rem">Supervisor</span>
+    <select id="sup-filter" onchange="update()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:11px;padding:.38rem .7rem;border-radius:4px;outline:none;cursor:pointer;color-scheme:dark">
+      <option value="">Todos</option>
+    </select>
+    <span class="filter-label" style="margin-left:.5rem">Sede</span>
+    <select id="sede-filter" onchange="update()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:11px;padding:.38rem .7rem;border-radius:4px;outline:none;cursor:pointer;color-scheme:dark;max-width:160px">
+      <option value="">Todas</option>
+    </select>
+    <button class="btn-reset" onclick="resetDates()">Reset</button>
+  </div>
+</div>
+
+<main>
+  <p class="range-label" id="range-label"></p>
+
+  <!-- DETALLE: En proceso -->
+  <div class="detail-section" id="detail-proc">
+    <div class="detail-header">
+      <span class="detail-title">En proceso · detalle</span>
+      <button class="detail-close" onclick="toggleDetail('proc')">Cerrar ✕</button>
+    </div>
+    <div class="detail-table-wrap" id="detail-proc-table"></div>
+  </div>
+
+  <!-- DETALLE: Postergados / Pendientes -->
+  <div class="detail-section" id="detail-pp">
+    <div class="detail-header">
+      <span class="detail-title">Postergados / Pendientes · detalle</span>
+      <button class="detail-close" onclick="toggleDetail('pp')">Cerrar ✕</button>
+    </div>
+    <div class="detail-table-wrap" id="detail-pp-table"></div>
+  </div>
+
+  <!-- DETALLE: Elementos Deportivos pendientes -->
+  <div class="detail-section" id="detail-ed">
+    <div class="detail-header">
+      <span class="detail-title">Elementos Deportivos · pendientes de compra</span>
+      <button class="detail-close" onclick="toggleDetail('ed')">Cerrar ✕</button>
+    </div>
+    <div class="detail-table-wrap" id="detail-ed-table"></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">Requerimientos</div>
+      <div class="kpi-val" id="k-total">—</div>
+      <div class="kpi-sub" id="k-total-sub">en el período</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Ejecutados</div>
+      <div class="kpi-val green" id="k-exec">—</div>
+      <div class="kpi-sub" id="k-exec-pct">—</div>
+    </div>
+    <div class="kpi" id="kpi-proc" onclick="toggleDetail('proc')" style="cursor:pointer">
+      <div class="kpi-label">En proceso <span style="opacity:.5">▾</span></div>
+      <div class="kpi-val orange" id="k-proc">—</div>
+      <div class="kpi-sub" id="k-proc-pct">—</div>
+    </div>
+    <div class="kpi" id="kpi-pp" onclick="toggleDetail('pp')" style="cursor:pointer">
+      <div class="kpi-label">Postergados / Pendientes <span style="opacity:.5">▾</span></div>
+      <div style="display:flex;align-items:baseline;gap:14px">
+        <div>
+          <div class="kpi-val" id="k-poster" style="color:#1a1a1a;-webkit-text-stroke:1px #555;font-size:2.1rem">—</div>
+          <div class="kpi-sub" style="margin-top:2px">postergados</div>
+        </div>
+        <div>
+          <div class="kpi-val" id="k-pend" style="color:#E8332E;font-size:2.1rem">—</div>
+          <div class="kpi-sub" style="margin-top:2px">pendientes</div>
+        </div>
+      </div>
+    </div>
+    <div class="kpi kpi-alert" id="kpi-ed" onclick="toggleDetail('ed')" style="cursor:pointer">
+      <div class="kpi-label">Elementos Deportivos · pendientes <span style="opacity:.5">▾</span></div>
+      <div class="kpi-val" id="k-edeport">—</div>
+      <div class="kpi-sub" id="k-edeport-sub">—</div>
+      <a href="#ed-section" class="kpi-alert-tag" style="text-decoration:none;cursor:pointer" onclick="event.stopPropagation()">Gestión Compras</a>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+
+    <div class="card full">
+      <div class="card-title">Requerimientos por día</div>
+      <div class="chart-wrap h160">
+        <canvas id="c-dias"></canvas>
+        <div class="empty" id="empty-dias">Sin datos en el período seleccionado</div>
+      </div>
+    </div>
+
+    <!-- fila de 3 columnas -->
+    <div class="card general-only" style="grid-column:span 1;min-width:0">
+      <div class="card-title">Sedes silenciosas · días sin reportar</div>
+      <div id="silent-sedes" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding-right:2px"></div>
+    </div>
+
+    <div class="card" style="grid-column:span 1;min-width:0">
+      <div class="card-title">Distribución por área</div>
+      <div id="treemap-areas" style="height:260px;position:relative"></div>
+      <div class="empty" id="empty-areas" style="display:none">Sin datos</div>
+    </div>
+
+    <div class="card" style="grid-column:span 1;min-width:0">
+      <div class="card-title">Top problemas recurrentes</div>
+      <div id="top-problemas" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px"></div>
+    </div>
+
+    <div class="card full general-only">
+      <div class="card-title">Requerimientos por sede · todas las sedes</div>
+      <div class="legend">
+        <span><span class="lsq" style="background:var(--exec)"></span>Ejecutado</span>
+        <span><span class="lsq" style="background:var(--orange)"></span>En proceso</span>
+        <span><span class="lsq" style="background:#3a3a3a;border:1px solid #555"></span>Postergado</span>
+        <span><span class="lsq" style="background:#E8332E"></span>Pendiente</span>
+        <span><span class="lsq" style="background:var(--bg3);border:1px solid var(--border)"></span>Sin reclamos</span>
+      </div>
+      <div class="chart-wrap h340">
+        <canvas id="c-sede"></canvas>
+        <div class="empty" id="empty-sede">Sin datos</div>
+      </div>
+    </div>
+
+  </div>
+  <!-- ELEMENTOS DEPORTIVOS -->
+  <div id="ed-section" style="margin-top:12px;display:none">
+    <div class="card" style="border-color:rgba(255,92,51,.2)">
+      <div class="card-title">Elementos Deportivos · cantidades solicitadas en el período</div>
+      <div id="ed-results"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <span>CORE</span> · Mantenimiento de Sedes · datos en tiempo real desde Google Sheets
+</footer>
+
+<script>
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxCPdcFC3wfQjjZn-ksntyvsd2l8Ahtjlnh18M_xkhWDLU0RllOkmjJy7kkBRXgMkY/exec';
+const ALL_SEDES = ["1 - RECOLETA", "2 - CAÑITAS II", "3 - PALERMO SOHO", "4 - BARRIO NORTE", "5 - GUTIERREZ", "6 - CABILDO", "7 - CABALLITO", "8 - SANTA FE", "9 - ALMAGRO", "10 - URQUIZA", "11 - SCALABRINI", "12 - JUNCAL", "13 - COLEGIALES", "14 - CARRANZA", "15 - HOLMBERG", "18 - PALERMO CHICO", "19 - OLIVOS", "23 - P. CENTENARIO", "24 - TRIUNVIRATO", "25 - DIRECTORIO", "26 - MANSILLA", "30 - NUÑEZ", "31 - MARTINEZ"];
+const RAW = [{"date": "2026-05-05", "Supervisor": "Angel", "Sede": "30 - NUÑEZ", "Sector": "Baños", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-05", "Supervisor": "Angel", "Sede": "30 - NUÑEZ", "Sector": "Baños", "Estatus": "En proceso", "Proveedor": "Fer - 866"}, {"date": "2026-05-05", "Supervisor": "Angel", "Sede": "30 - NUÑEZ", "Sector": "Recepción", "Estatus": "En proceso", "Proveedor": "Fer - 866"}, {"date": "2026-05-05", "Supervisor": "Angel", "Sede": "30 - NUÑEZ", "Sector": "Entrenamiento", "Estatus": "En proceso", "Proveedor": "Fer - 866"}, {"date": "2026-05-05", "Supervisor": "Angel", "Sede": "30 - NUÑEZ", "Sector": "Baños", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-05", "Supervisor": "Angel", "Sede": "30 - NUÑEZ", "Sector": "Entrenamiento", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-06", "Supervisor": "Débora", "Sede": "10 - URQUIZA", "Sector": "Fachada", "Estatus": "En proceso", "Proveedor": null}, {"date": "2026-05-08", "Supervisor": "Débora", "Sede": "10 - URQUIZA", "Sector": "Baños", "Estatus": "Ejecutado", "Proveedor": null}, {"date": "2026-05-08", "Supervisor": "Bautista", "Sede": "18 - PALERMO CHICO", "Sector": "Baños", "Estatus": "En proceso", "Proveedor": "Active Clean"}, {"date": "2026-05-08", "Supervisor": "Bautista", "Sede": "14 - CARRANZA", "Sector": "Limpieza", "Estatus": "Ejecutado", "Proveedor": null}, {"date": "2026-05-08", "Supervisor": "Belén", "Sede": "24 - TRIUNVIRATO", "Sector": "Fachada", "Estatus": "Ejecutado", "Proveedor": "Cerrajería Marina"}, {"date": "2026-05-08", "Supervisor": "Lucas", "Sede": "9 - ALMAGRO", "Sector": "Recepción", "Estatus": "En proceso", "Proveedor": null}, {"date": "2026-05-09", "Supervisor": "Angel", "Sede": "1 - RECOLETA", "Sector": "Paisajismo", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-11", "Supervisor": "Valentin", "Sede": "15 - HOLMBERG", "Sector": "Entrenamiento", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-11", "Supervisor": "Diego", "Sede": "5 - GUTIERREZ", "Sector": "Baños", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-11", "Supervisor": "Angel", "Sede": "1 - RECOLETA", "Sector": "Fachada", "Estatus": "Ejecutado", "Proveedor": "Cerrajería Marina"}, {"date": "2026-05-12", "Supervisor": "Juan", "Sede": "7 - CABALLITO", "Sector": "Limpieza", "Estatus": "Ejecutado", "Proveedor": "Active Clean"}, {"date": "2026-05-12", "Supervisor": "Juan", "Sede": "7 - CABALLITO", "Sector": "Entrenamiento", "Estatus": "En proceso", "Proveedor": "Aldo"}, {"date": "2026-05-12", "Supervisor": "Juan", "Sede": "25 - DIRECTORIO", "Sector": "Entrenamiento", "Estatus": "En proceso", "Proveedor": "Aldo"}, {"date": "2026-05-12", "Supervisor": "Juan", "Sede": "25 - DIRECTORIO", "Sector": "Entrenamiento", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-12", "Supervisor": "Diego", "Sede": "4 - BARRIO NORTE", "Sector": "Entrenamiento", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-12", "Supervisor": "Angel", "Sede": "13 - COLEGIALES", "Sector": "Entrenamiento", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-12", "Supervisor": "Angel", "Sede": "13 - COLEGIALES", "Sector": "Baños", "Estatus": "En proceso", "Proveedor": null}, {"date": "2026-05-12", "Supervisor": "Belén", "Sede": "24 - TRIUNVIRATO", "Sector": "Fachada", "Estatus": "En proceso", "Proveedor": "Fer - 866"}, {"date": "2026-05-12", "Supervisor": "Belén", "Sede": "24 - TRIUNVIRATO", "Sector": "Paisajismo", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-12", "Supervisor": "Belén", "Sede": "24 - TRIUNVIRATO", "Sector": "Recepción", "Estatus": "En proceso", "Proveedor": "Fer - 866"}, {"date": "2026-05-12", "Supervisor": "Belén", "Sede": "24 - TRIUNVIRATO", "Sector": "Entrenamiento", "Estatus": "En proceso", "Proveedor": "Aldo"}, {"date": "2026-05-12", "Supervisor": "Belén", "Sede": "24 - TRIUNVIRATO", "Sector": "Entrenamiento", "Estatus": "En proceso", "Proveedor": "Diego Hiden"}, {"date": "2026-05-13", "Supervisor": "Antonio", "Sede": "3 - PALERMO SOHO", "Sector": "Recepción", "Estatus": "Ejecutado", "Proveedor": null}, {"date": "2026-05-13", "Supervisor": "Antonio", "Sede": "8 - SANTA FE", "Sector": "Recepción", "Estatus": "Ejecutado", "Proveedor": null}, {"date": "2026-05-13", "Supervisor": "Antonio", "Sede": "3 - PALERMO SOHO", "Sector": "Entrenamiento", "Estatus": "Ejecutado", "Proveedor": null}, {"date": "2026-05-13", "Supervisor": "Antonio", "Sede": "3 - PALERMO SOHO", "Sector": "Entrenamiento", "Estatus": "En proceso", "Proveedor": null}, {"date": "2026-05-13", "Supervisor": "Valeria", "Sede": "26 - MANSILLA", "Sector": "Limpieza", "Estatus": "Ejecutado", "Proveedor": null}, {"date": "2026-05-13", "Supervisor": "Lucas", "Sede": "11 - SCALABRINI", "Sector": "Fachada", "Estatus": "En proceso", "Proveedor": null}, {"date": "2026-05-14", "Supervisor": "Angel", "Sede": "13 - COLEGIALES", "Sector": "Baños", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-14", "Supervisor": "Diego", "Sede": "4 - BARRIO NORTE", "Sector": "Elementos Deportivos", "Estatus": "En proceso", "Proveedor": "Compras"}, {"date": "2026-05-14", "Supervisor": "Bautista", "Sede": "18 - PALERMO CHICO", "Sector": "Elementos Deportivos", "Estatus": "En proceso", "Proveedor": "Compras"}, {"date": "2026-05-14", "Supervisor": "Bautista", "Sede": "18 - PALERMO CHICO", "Sector": "Fachada", "Estatus": "En proceso", "Proveedor": null}, {"date": "2026-05-14", "Supervisor": "Lucas", "Sede": "11 - SCALABRINI", "Sector": "Entrenamiento", "Estatus": "En proceso", "Proveedor": "Aldo"}, {"date": "2026-05-14", "Supervisor": "Angel", "Sede": "30 - NUÑEZ", "Sector": "Entrenamiento", "Estatus": "En proceso", "Proveedor": "Diego Hiden"}, {"date": "2026-05-14", "Supervisor": "Lucas", "Sede": "9 - ALMAGRO", "Sector": "Elementos Deportivos", "Estatus": "En proceso", "Proveedor": "Compras"}, {"date": "2026-05-14", "Supervisor": "Lucas", "Sede": "11 - SCALABRINI", "Sector": "Elementos Deportivos", "Estatus": "En proceso", "Proveedor": "Compras"}, {"date": "2026-05-14", "Supervisor": "Lucas", "Sede": "9 - ALMAGRO", "Sector": "Fachada", "Estatus": "Ejecutado", "Proveedor": "Diego Hiden"}, {"date": "2026-05-14", "Supervisor": "Lucas", "Sede": "12 - JUNCAL", "Sector": "Elementos Deportivos", "Estatus": "En proceso", "Proveedor": "Compras"}, {"date": "2026-05-14", "Supervisor": "Diego", "Sede": "4 - BARRIO NORTE", "Sector": "Elementos Deportivos", "Estatus": "En proceso", "Proveedor": "Compras"}, {"date": "2026-05-14", "Supervisor": "Lucas", "Sede": "9 - ALMAGRO", "Sector": "Fachada", "Estatus": "En proceso", "Proveedor": "Cristales Coronel"}, {"date": "2026-05-15", "Supervisor": "Lucas", "Sede": "23 - P. CENTENARIO", "Sector": "Recepción", "Estatus": "En proceso", "Proveedor": "Gustavo"}, {"date": "2026-05-15", "Supervisor": "Diego", "Sede": "4 - BARRIO NORTE", "Sector": "Elementos Deportivos", "Estatus": "En proceso", "Proveedor": "Compras"}, {"date": "2026-05-15", "Supervisor": "Bautista", "Sede": "18 - PALERMO CHICO", "Sector": "Elementos Deportivos", "Estatus": "En proceso", "Proveedor": "Compras"}, {"date": "2026-05-15", "Supervisor": "Juliana", "Sede": "6 - CABILDO", "Sector": "Baños", "Estatus": "En proceso", "Proveedor": null}];
+
+const CATALOGO_INDOOR = [
+  'Box de madera','Banda Naranja','Banda Negra','Pelotas 6kg','Discos 5kg',
+  'Bandas de glúteos res. baja','Bandas de glúteos res. media','Bandas de glúteos res. alta',
+  'Corebag','Soga','Juego de anillas','Juego de miniparalelas',
+  'Chalecos 10kg','Colchonetas','Cinturón de lastre','Magnesio 1KG'
+];
+
+const CATALOGO_PILATES = [
+  'Bloque','Mancuernas','Tobilleras','Pelota','Mat','Aro','Slider','Roll','Correa'
+];
+
+const CATALOGO = [...CATALOGO_INDOOR, ...CATALOGO_PILATES];
+
+const PROBLEMAS = {
+  'Humedad / Filtraciones': ['humedad', 'filtrac', 'gotea', 'agua'],
+  'Iluminación':            ['luz', 'lampar', 'spot', 'led', 'foco'],
+  'Puertas / Cerraduras':   ['puerta', 'cerradura', 'cerrojo', 'llave'],
+  'Pisos / Paredes':        ['piso', 'pared', 'zócalo', 'pintura', 'durlock', 'socalo'],
+  'Sanitarios':             ['inodoro', 'canilla', 'baño', 'pileta', 'depósito', 'agua'],
+  'Equipamiento roto':      ['roto', 'rompio', 'rompió', 'quebr', 'partido', 'banda', 'coreb', 'chaleco', 'box', 'cajon', 'disco', 'pelota', 'parale', 'anilla', 'colcho', 'cintur', 'magnesio'],
+  'Reposición':             ['falta', 'necesitamos', 'precisamos', 'reponer', 'tenemo'],
+  'Limpieza':               ['sucio', 'olor', 'limpieza', 'alcohol'],
+  'Estructural':            ['techo', 'fachada', 'pared', 'rajadura'],
+  'Tecnología':             ['pc', 'computadora', 'wifi', 'pantalla', 'tv'],
+};
+
+// Aliases para normalizar nombres del sheet
+const ALIASES = {
+  'anillas': 'Juego de anillas',
+  'juego de anillas': 'Juego de anillas',
+  'miniparalelas': 'Juego de miniparalelas',
+  'paralelas': 'Juego de miniparalelas',
+  'juego de miniparalelas': 'Juego de miniparalelas',
+  'soga': 'Soga', 'sogas': 'Soga',
+  'corebag': 'Corebag', 'core bag': 'Corebag',
+  'banda naranja': 'Banda Naranja',
+  'banda negra': 'Banda Negra',
+  'box de madera': 'Box de madera', 'cajón de madera': 'Box de madera',
+  'pelotas 6kg': 'Pelotas 6kg', 'pelota 6kg': 'Pelotas 6kg',
+  'discos 5kg': 'Discos 5kg', 'disco 5kg': 'Discos 5kg', 'disco': 'Discos 5kg', 'discos': 'Discos 5kg',
+  'bandas de glúteos res. baja': 'Bandas de glúteos res. baja',
+  'bandas de glúteos res. media': 'Bandas de glúteos res. media',
+  'bandas de glúteos res. alta': 'Bandas de glúteos res. alta',
+  'chalecos 10kg': 'Chalecos 10kg', 'chaleco 10kg': 'Chalecos 10kg', 'chalecos': 'Chalecos 10kg',
+  'colchonetas': 'Colchonetas', 'colchoneta': 'Colchonetas',
+  'cinturón de lastre': 'Cinturón de lastre', 'cinturones': 'Cinturón de lastre',
+  'magnesio 1kg': 'Magnesio 1KG', 'magnesio 1kg': 'Magnesio 1KG',
+  // Pilates
+  'bloque': 'Bloque', 'ladrillo': 'Bloque', 'cuadrado': 'Bloque',
+  'mancuernas': 'Mancuernas', 'mancuerna': 'Mancuernas', 'pesas': 'Mancuernas', 'pesa': 'Mancuernas',
+  'tobilleras': 'Tobilleras', 'tobillera': 'Tobilleras',
+  'pelota': 'Pelota', 'bola': 'Pelota',
+  'mat': 'Mat',
+  'aro': 'Aro',
+  'slider': 'Slider', 'deslizante': 'Slider',
+  'roll': 'Roll',
+  'correa': 'Correa'
+};
+
+function normalizeItem(raw) {
+  const key = raw.toLowerCase().trim();
+  if (ALIASES[key]) return ALIASES[key];
+  for (const alias in ALIASES) {
+    if (key.includes(alias)) return ALIASES[alias];
+  }
+  // Try matching against catalogue
+  for (const cat of CATALOGO) {
+    if (key.includes(cat.toLowerCase())) return cat;
+  }
+  return null;
+}
+
+// Parse "Nombre Cantidad" — soporta múltiples ítems separados por " / "
+function parseEdLine(line) {
+  if (!line) return null;
+  // Si hay múltiples ítems separados por " / ", devolvemos el primero que matchee
+  // pero procesamos todos en parseEdLines (plural)
+  const clean = line.replace(/\s*\/\s*/g, '|||').trim();
+  const parts = clean.split('|||');
+  const results = [];
+  parts.forEach(part => {
+    part = part.trim();
+    const match = part.match(/^(.*?)\s+(\d+)\s*$/);
+    if (!match) return;
+    const nombre = normalizeItem(match[1].trim());
+    const cantidad = parseInt(match[2]);
+    if (nombre && !isNaN(cantidad)) results.push({ nombre, cantidad });
+  });
+  return results.length ? results : null;
+}
+
+// Aggregate EdSolicitados from filtered data
+function buildEdTotals(data) {
+  const totals = {};
+  CATALOGO.forEach(c => totals[c] = 0);
+  data.forEach(row => {
+    if (!row.EdSolicitados) return;
+    const parsed = parseEdLine(row.EdSolicitados);
+    if (parsed) totals[parsed.nombre] = (totals[parsed.nombre] || 0) + parsed.cantidad;
+  });
+  return totals;
+}
+
+// ── STATE
+let liveData = null;
+let charts   = {};
+
+// ── CONSTANTS
+const MUTED = '#9DA5A8';
+const GRID  = 'rgba(255,255,255,0.05)';
+const EXEC  = '#4CAF7D';
+const PROC  = '#FF5C33';
+const POSTER = '#3a3a3a';
+const PEND   = '#E8332E';
+const base  = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} };
+const ax    = {
+  x: { ticks:{color:MUTED, font:{size:10, family:'Roboto'}}, grid:{display:false} },
+  y: { ticks:{color:MUTED, font:{size:10, family:'Roboto'}}, grid:{color:GRID} }
+};
+
+function activeData() { return liveData || RAW; }
+function destroyAll() { Object.values(charts).forEach(c => c.destroy()); charts = {}; }
+function showEmpty(id, show) {
+  const el = document.getElementById('empty-' + id);
+  const cv = document.getElementById('c-' + id);
+  if (!el || !cv) return;
+  el.style.display = show ? 'flex' : 'none';
+  cv.style.display = show ? 'none' : 'block';
+}
+function setStatus(html, cls) {
+  const el = document.getElementById('sync-status');
+  el.innerHTML = html;
+  el.className = 'sync-status ' + (cls || '');
+}
+
+// ── DETALLE EN PROCESO / POSTERGADOS-PENDIENTES ────────────────────────────────
+let lastFilteredData = [];
+
+function toggleDetail(which) {
+  const el = document.getElementById('detail-' + which);
+  const isOpen = el.classList.contains('open');
+  // cerrar todos primero
+  ['proc','pp','ed'].forEach(w => document.getElementById('detail-' + w).classList.remove('open'));
+  if (!isOpen) {
+    el.classList.add('open');
+    if (which === 'proc') {
+      renderDetailTable('detail-proc-table', lastFilteredData.filter(d => d.Estatus === 'En proceso'), false);
+    } else if (which === 'pp') {
+      renderDetailTable('detail-pp-table', lastFilteredData.filter(d => d.Estatus === 'Postergado' || d.Estatus === 'Pendiente'), true);
+    } else if (which === 'ed') {
+      renderEdDetailTable(lastFilteredData.filter(d => d.Sector === 'Elementos Deportivos' && d.Estatus === 'En proceso'));
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function fotoLink(url, label) {
+  if (!url) return '';
+  return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' + label + '</a>';
+}
+
+function renderDetailTable(containerId, rows, showStatus) {
+  const el = document.getElementById(containerId);
+  if (!rows.length) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:.5rem 0">No hay requerimientos en este estado para el período / filtros actuales.</p>';
+    return;
+  }
+  const statusClass = s => s === 'En proceso' ? 'proceso' : (s === 'Postergado' ? 'postergado' : 'pendiente');
+  const sorted = rows.slice().sort((a,b) => (a.date||'') < (b.date||'') ? 1 : -1);
+
+  let head = '<thead><tr>' +
+    '<th>Fecha</th><th>Supervisor</th><th>Sede</th><th>Sector</th><th>Descripción</th><th>Fotos</th>' +
+    (showStatus ? '<th>Estatus</th>' : '') +
+    '</tr></thead>';
+
+  let body = '<tbody>' + sorted.map(r => {
+    const fotos = [fotoLink(r.FotoVideo, '📷 1'), fotoLink(r.Foto2, '📷 2')].filter(Boolean).join(' · ') || '—';
+    return '<tr>' +
+      '<td style="white-space:nowrap">' + (r.date || '—') + '</td>' +
+      '<td style="white-space:nowrap">' + escapeHtml(r.Supervisor) + '</td>' +
+      '<td style="white-space:nowrap">' + escapeHtml((r.Sede||'').replace(' - ',' · ')) + '</td>' +
+      '<td style="white-space:nowrap">' + escapeHtml(r.Sector) + '</td>' +
+      '<td style="min-width:220px;max-width:380px">' + escapeHtml(r.Descripcion) + '</td>' +
+      '<td style="white-space:nowrap">' + fotos + '</td>' +
+      (showStatus ? '<td><span class="status-pill ' + statusClass(r.Estatus) + '">' + escapeHtml(r.Estatus) + '</span></td>' : '') +
+      '</tr>';
+  }).join('') + '</tbody>';
+
+  el.innerHTML = '<table class="detail-table">' + head + body + '</table>';
+}
+
+function renderEdDetailTable(rows) {
+  const el = document.getElementById('detail-ed-table');
+  if (!rows.length) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:.5rem 0">No hay Elementos Deportivos pendientes de compra para el período / filtros actuales.</p>';
+    return;
+  }
+  const sorted = rows.slice().sort((a,b) => (a.date||'') < (b.date||'') ? 1 : -1);
+
+  let head = '<thead><tr>' +
+    '<th>Fecha</th><th>Supervisor</th><th>Sede</th><th>Elementos solicitados</th><th>Descripción</th><th>Fotos</th>' +
+    '</tr></thead>';
+
+  let body = '<tbody>' + sorted.map(r => {
+    const fotos = [fotoLink(r.FotoVideo, '📷 1'), fotoLink(r.Foto2, '📷 2')].filter(Boolean).join(' · ') || '—';
+    return '<tr>' +
+      '<td style="white-space:nowrap">' + (r.date || '—') + '</td>' +
+      '<td style="white-space:nowrap">' + escapeHtml(r.Supervisor) + '</td>' +
+      '<td style="white-space:nowrap">' + escapeHtml((r.Sede||'').replace(' - ',' · ')) + '</td>' +
+      '<td style="min-width:160px;color:var(--orange);font-weight:500">' + escapeHtml(r.EdSolicitados || '—') + '</td>' +
+      '<td style="min-width:200px;max-width:340px">' + escapeHtml(r.Descripcion) + '</td>' +
+      '<td style="white-space:nowrap">' + fotos + '</td>' +
+      '</tr>';
+  }).join('') + '</tbody>';
+
+  el.innerHTML = '<table class="detail-table">' + head + body + '</table>';
+}
+
+// ── SYNC
+async function syncFromSheet() {
+  const btn = document.getElementById('btn-sync');
+  btn.disabled = true;
+  setStatus('<span class="spin"></span>&nbsp;Sincronizando...', '');
+  try {
+    const res = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!json.ok || !json.data) throw new Error('Respuesta inesperada');
+    liveData = json.data;
+    // Populate supervisor dropdown
+    const sups = [...new Set(liveData.map(d => d.Supervisor).filter(Boolean))].sort();
+    const sel = document.getElementById('sup-filter');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Todos</option>' +
+      sups.map(s => '<option value="' + s + '"' + (s===current?' selected':'') + '>' + s + '</option>').join('');
+    // Populate sede dropdown (siempre con ALL_SEDES, sede sea cual sea el dato)
+    const sedeSel = document.getElementById('sede-filter');
+    const sedeCurrent = sedeSel.value;
+    sedeSel.innerHTML = '<option value="">Todas</option>' +
+      ALL_SEDES.map(s => '<option value="' + s + '"' + (s===sedeCurrent?' selected':'') + '>' + s + '</option>').join('');
+    const dates = liveData.map(d => d.date).filter(Boolean).sort();
+    if (dates.length) {
+      document.getElementById('date-from').value = dates[0];
+      document.getElementById('date-to').value   = dates[dates.length - 1];
+    }
+    const now = new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    setStatus('✓ ' + liveData.length + ' registros · ' + now, 'ok');
+    update();
+  } catch(e) {
+    setStatus('✗ ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── UPDATE
+function update() {
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  const sup  = document.getElementById('sup-filter').value;
+  const sedeFiltro = document.getElementById('sede-filter').value;
+  const data = activeData()
+    .filter(d => d.date >= from && d.date <= to)
+    .filter(d => !sup || d.Supervisor === sup)
+    .filter(d => !sedeFiltro || d.Sede === sedeFiltro);
+  destroyAll();
+  lastFilteredData = data;
+
+  // Si hay alguna tabla de detalle abierta, refrescarla con los nuevos datos filtrados
+  if (document.getElementById('detail-proc').classList.contains('open')) {
+    renderDetailTable('detail-proc-table', data.filter(d => d.Estatus === 'En proceso'), false);
+  }
+  if (document.getElementById('detail-pp').classList.contains('open')) {
+    renderDetailTable('detail-pp-table', data.filter(d => d.Estatus === 'Postergado' || d.Estatus === 'Pendiente'), true);
+  }
+  if (document.getElementById('detail-ed').classList.contains('open')) {
+    renderEdDetailTable(data.filter(d => d.Sector === 'Elementos Deportivos' && d.Estatus === 'En proceso'));
+  }
+
+  // Mostrar/ocultar paneles que solo tienen sentido en vista general (todas las sedes)
+  const generalOnly = document.querySelectorAll('.general-only');
+  generalOnly.forEach(el => { el.style.display = sedeFiltro ? 'none' : ''; });
+
+  // KPIs
+  const total   = data.length;
+  const exec    = data.filter(d => d.Estatus === 'Ejecutado').length;
+  const proc    = data.filter(d => d.Estatus === 'En proceso').length;
+  const poster  = data.filter(d => d.Estatus === 'Postergado').length;
+  const pend    = data.filter(d => d.Estatus === 'Pendiente').length;
+  const edReqs  = data.filter(d => d.Sector === 'Elementos Deportivos').length;
+  const edProc  = data.filter(d => d.Sector === 'Elementos Deportivos' && d.Estatus === 'En proceso').length;
+  const edSedes = new Set(data.filter(d => d.Sector === 'Elementos Deportivos').map(d => d.Sede)).size;
+
+  document.getElementById('k-total').textContent    = total;
+  document.getElementById('k-exec').textContent     = exec;
+  document.getElementById('k-proc').textContent     = proc;
+  document.getElementById('k-edeport').textContent  = edProc;
+  document.getElementById('k-exec-pct').textContent  = total ? Math.round(exec/total*100) + '% del total' : '—';
+  document.getElementById('k-proc-pct').textContent  = total ? Math.round(proc/total*100) + '% del total' : '—';
+  document.getElementById('k-poster').textContent  = poster;
+  document.getElementById('k-pend').textContent    = pend;
+  document.getElementById('k-edeport-sub').textContent = edReqs + ' total · ' + edSedes + (edSedes===1?' sede':' sedes');
+  document.getElementById('range-label').innerHTML  = 'Mostrando <strong>' + total + '</strong> requerimiento' + (total!==1?'s':'') + ' · ' + from + ' → ' + to;
+
+  // ED section
+  const edData = data.filter(d => d.Sector === 'Elementos Deportivos' && d.EdSolicitados);
+  document.getElementById('ed-section').style.display = edData.length > 0 ? 'block' : 'none';
+  if (edData.length > 0) renderEdChart(data);
+
+  // Top problemas
+  renderTopProblemas(data);
+
+  // GRÁFICO 1 — Días (línea)
+  const byDay = data.reduce((m, d) => { m[d.date] = (m[d.date]||0)+1; return m; }, {});
+  const allDates = [];
+  if (from && to) {
+    let cur = new Date(from + 'T00:00:00');
+    const end = new Date(to + 'T00:00:00');
+    while (cur <= end) { allDates.push(cur.toISOString().slice(0,10)); cur.setDate(cur.getDate()+1); }
+  }
+  showEmpty('dias', total === 0);
+  if (total > 0) {
+    charts['dias'] = new Chart(document.getElementById('c-dias'), {
+      type: 'line',
+      data: {
+        labels: allDates.map(d => d.slice(5).replace('-','/')),
+        datasets: [{ data: allDates.map(d => byDay[d]||0), borderColor:PROC,
+          backgroundColor:'rgba(255,92,51,0.08)', fill:true, tension:0.4,
+          pointBackgroundColor:PROC, pointRadius:4, pointHoverRadius:6, borderWidth:2 }]
+      },
+      options: { ...base, scales: { x:{...ax.x}, y:{...ax.y, min:0, ticks:{...ax.y.ticks, stepSize:1}} } }
+    });
+  }
+
+  // GRÁFICO 2 — Treemap áreas
+  const sectorMap = {};
+  data.forEach(d => { if (d.Sector) sectorMap[d.Sector] = (sectorMap[d.Sector]||0)+1; });
+  const sectorLabels = Object.keys(sectorMap).sort((a,b) => sectorMap[b]-sectorMap[a]);
+  const sectorVals   = sectorLabels.map(s => sectorMap[s]);
+  renderTreemapAreas(sectorLabels, sectorVals, total);
+
+  // SEDES SILENCIOSAS — días desde último reporte (usa todos los datos, no filtra por período). Solo en vista general.
+  if (!sedeFiltro) {
+    const allData = activeData();
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const lastReport = {};
+    allData.forEach(d => {
+      if (!d.Sede || !d.date) return;
+      if (!lastReport[d.Sede] || d.date > lastReport[d.Sede]) lastReport[d.Sede] = d.date;
+    });
+    const silentEl = document.getElementById('silent-sedes');
+    const sedesSilent = ALL_SEDES.map(sede => {
+      const last = lastReport[sede];
+      if (!last) return { sede, dias: null };
+      const diff = Math.floor((today - new Date(last + 'T00:00:00')) / 86400000);
+      return { sede, dias: diff, last };
+    }).sort((a,b) => {
+      if (a.dias === null && b.dias === null) return 0;
+      if (a.dias === null) return 1;
+      if (b.dias === null) return -1;
+      return b.dias - a.dias;
+    });
+
+    silentEl.innerHTML = sedesSilent.map(({ sede, dias, last }) => {
+      let color, badge;
+      if (dias === null) {
+        color = 'var(--muted)'; badge = 'Sin reportes';
+      } else if (dias === 0) {
+        color = '#4CAF7D'; badge = 'Hoy';
+      } else if (dias <= 7) {
+        color = '#4CAF7D'; badge = dias + 'd';
+      } else if (dias <= 14) {
+        color = '#F5A623'; badge = dias + 'd';
+      } else {
+        color = '#FF5C33'; badge = dias + 'd';
+      }
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.35rem .5rem;border-radius:4px;background:rgba(255,255,255,0.03)">' +
+        '<span style="font-size:11px;color:var(--text)">' + sede.replace(' - ', ' · ') + '</span>' +
+        '<span style="font-size:11px;font-weight:700;color:' + color + ';min-width:48px;text-align:right">' + badge + '</span>' +
+      '</div>';
+    }).join('');
+
+    // GRÁFICO 3 — Sedes (todas)
+    const sedeExec   = ALL_SEDES.map(s => data.filter(d => d.Sede===s && d.Estatus==='Ejecutado').length);
+    const sedeProc   = ALL_SEDES.map(s => data.filter(d => d.Sede===s && d.Estatus==='En proceso').length);
+    const sedePoster = ALL_SEDES.map(s => data.filter(d => d.Sede===s && d.Estatus==='Postergado').length);
+    const sedePend   = ALL_SEDES.map(s => data.filter(d => d.Sede===s && d.Estatus==='Pendiente').length);
+    const sedeTotal  = ALL_SEDES.map((_,i) => sedeExec[i]+sedeProc[i]+sedePoster[i]+sedePend[i]);
+    showEmpty('sede', false);
+    charts['sede'] = new Chart(document.getElementById('c-sede'), {
+      type: 'bar',
+      data: {
+        labels: ALL_SEDES.map(s => s.replace(' - ',' · ')),
+        datasets: [
+          { label:'Ejecutado',    data:sedeExec,   backgroundColor:sedeExec.map((v,i)=>v>0?EXEC:(sedeTotal[i]===0?'rgba(255,255,255,0.04)':'transparent')), borderRadius:3, stack:'s' },
+          { label:'En proceso',   data:sedeProc,   backgroundColor:sedeProc.map(v=>v>0?PROC:'transparent'), borderRadius:3, stack:'s' },
+          { label:'Postergado',   data:sedePoster, backgroundColor:sedePoster.map(v=>v>0?POSTER:'transparent'), borderRadius:3, stack:'s' },
+          { label:'Pendiente',    data:sedePend,   backgroundColor:sedePend.map(v=>v>0?PEND:'transparent'), borderRadius:3, stack:'s' },
+          { label:'Sin reclamos', data:ALL_SEDES.map((_,i)=>sedeTotal[i]===0?0.15:0), backgroundColor:'rgba(255,255,255,0.04)', borderRadius:3, stack:'s' }
+        ]
+      },
+      options: { ...base,
+        scales: {
+          x: { ...ax.x, ticks:{...ax.x.ticks, autoSkip:false, maxRotation:35, font:{size:9}} },
+          y: { ...ax.y, min:0, ticks:{...ax.y.ticks, stepSize:1} }
+        },
+        plugins: { ...base.plugins,
+          tooltip: { callbacks: { label: ctx => ctx.dataset.label==='Sin reclamos'?' Sin reclamos en el período':' '+ctx.dataset.label+': '+ctx.raw } }
+        }
+      }
+    });
+  }
+}
+
+// ── HELPER: renderiza una fila de barra (item, exec, proc, poster, pend)
+function renderEdBarRow(item, totals, maxVal) {
+  const ve = totals.exec[item]   || 0;
+  const vp = totals.proc[item]   || 0;
+  const vpo= totals.poster[item] || 0;
+  const vpe= totals.pend[item]   || 0;
+  const vt = ve + vp + vpo + vpe;
+  const pE  = (ve  / maxVal * 100).toFixed(1);
+  const pP  = (vp  / maxVal * 100).toFixed(1);
+  const pPo = (vpo / maxVal * 100).toFixed(1);
+  const pPe = (vpe / maxVal * 100).toFixed(1);
+  const tc  = vt > 0 ? 'var(--text)' : 'var(--muted)';
+  return '<div style="display:grid;grid-template-columns:180px 32px 1fr;align-items:center;gap:10px">' +
+    '<div style="font-size:11px;color:' + tc + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + item + '</div>' +
+    '<div style="font-size:13px;font-weight:700;color:' + tc + ';text-align:right">' + (vt || '') + '</div>' +
+    '<div class="ed-bar" data-exec="' + ve + '" data-proc="' + vp + '" data-poster="' + vpo + '" data-pend="' + vpe + '" data-item="' + item + '" ' +
+      'style="background:rgba(255,255,255,0.04);border-radius:3px;height:10px;overflow:hidden;display:flex;cursor:default">' +
+      '<div style="width:' + pE + '%;height:100%;background:#4CAF7D"></div>' +
+      '<div style="width:' + pP + '%;height:100%;background:#FF5C33"></div>' +
+      '<div style="width:' + pPo + '%;height:100%;background:#3a3a3a"></div>' +
+      '<div style="width:' + pPe + '%;height:100%;background:#E8332E"></div>' +
+    '</div></div>';
+}
+
+// ── GRÁFICO ED — barras horizontales con todos los ítems del catálogo
+function renderEdChart(data) {
+  const totals = {
+    exec:   {}, proc: {}, poster: {}, pend: {}
+  };
+  CATALOGO.forEach(c => { totals.exec[c]=0; totals.proc[c]=0; totals.poster[c]=0; totals.pend[c]=0; });
+
+  data.filter(d => d.Sector === 'Elementos Deportivos' && d.EdSolicitados).forEach(row => {
+    const parsed = parseEdLine(row.EdSolicitados);
+    if (!parsed) return;
+    parsed.forEach(({ nombre, cantidad }) => {
+      if      (row.Estatus === 'Ejecutado')  totals.exec[nombre]   = (totals.exec[nombre]||0) + cantidad;
+      else if (row.Estatus === 'Postergado') totals.poster[nombre] = (totals.poster[nombre]||0) + cantidad;
+      else if (row.Estatus === 'Pendiente')  totals.pend[nombre]   = (totals.pend[nombre]||0) + cantidad;
+      else                                   totals.proc[nombre]   = (totals.proc[nombre]||0) + cantidad;
+    });
+  });
+
+  const container = document.getElementById('ed-results');
+  const maxVal = Math.max(...CATALOGO.map(c => (totals.exec[c]||0) + (totals.proc[c]||0) + (totals.poster[c]||0) + (totals.pend[c]||0)), 1);
+
+  // Floating tooltip
+  let tip = document.getElementById('ed-tip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = 'ed-tip';
+    tip.style.cssText = 'position:fixed;background:#1e2027;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:6px 10px;font-size:11px;color:#e8e6e0;pointer-events:none;display:none;z-index:999;line-height:1.6;font-family:Roboto,sans-serif';
+    document.body.appendChild(tip);
+  }
+
+  container.innerHTML =
+    '<p style="font-size:10px;color:var(--orange);letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Indoor</p>' +
+    '<div id="ed-bars-indoor" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1.25rem">' +
+    CATALOGO_INDOOR.map(item => renderEdBarRow(item, totals, maxVal)).join('') +
+    '</div>' +
+    '<p style="font-size:10px;color:var(--orange);letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Pilates / Yoga</p>' +
+    '<div id="ed-bars-pilates" style="display:flex;flex-direction:column;gap:6px">' +
+    CATALOGO_PILATES.map(item => renderEdBarRow(item, totals, maxVal)).join('') +
+    '</div>' +
+  '<div style="display:flex;gap:14px;margin-top:.75rem;flex-wrap:wrap">' +
+    '<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="width:9px;height:9px;border-radius:2px;background:#4CAF7D;display:inline-block"></span>Ejecutado</span>' +
+    '<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="width:9px;height:9px;border-radius:2px;background:#FF5C33;display:inline-block"></span>En proceso</span>' +
+    '<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="width:9px;height:9px;border-radius:2px;background:#3a3a3a;border:1px solid #555;display:inline-block"></span>Postergado</span>' +
+    '<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="width:9px;height:9px;border-radius:2px;background:#E8332E;display:inline-block"></span>Pendiente</span>' +
+  '</div>' +
+  '<p style="font-size:10px;color:var(--muted);margin-top:.5rem;letter-spacing:.04em">BASADO EN COLUMNA ELEMENTOS DEPORTIVOS SOLICITADOS · período seleccionado</p>';
+
+  // Attach hover events
+  document.querySelectorAll('.ed-bar').forEach(bar => {
+    bar.addEventListener('mousemove', e => {
+      const ve = bar.dataset.exec, vp = bar.dataset.proc, vpo = bar.dataset.poster, vpe = bar.dataset.pend;
+      tip.innerHTML = '<span style="color:#4CAF7D">✓ Ejecutado: ' + ve + '</span><br>' +
+        '<span style="color:#FF5C33">⟳ En proceso: ' + vp + '</span><br>' +
+        '<span style="color:#999">⏸ Postergado: ' + vpo + '</span><br>' +
+        '<span style="color:#E8332E">⚠ Pendiente: ' + vpe + '</span>';
+      tip.style.display = 'block';
+      tip.style.left = (e.clientX + 12) + 'px';
+      tip.style.top  = (e.clientY - 10) + 'px';
+    });
+    bar.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
+}
+
+// ── TREEMAP DISTRIBUCIÓN POR ÁREA (squarified real) ──────────────────────────
+function renderTreemapAreas(labels, vals, total) {
+  const el = document.getElementById('treemap-areas');
+  const emptyEl = document.getElementById('empty-areas');
+  if (!labels.length) {
+    el.innerHTML = '';
+    emptyEl.style.display = 'flex';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  const colors = ['#FF5C33','#4CAF7D','#5B9CF6','#A78BFA','#F5A623','#E879A0','#34D399','#FB923C','#9DA5A8'];
+  const W = el.clientWidth || 400;
+  const H = 260;
+  const sumVal = vals.reduce((a,b)=>a+b,0);
+
+  // Items ordenados de mayor a menor (clave para que el squarify dé buenos resultados)
+  const items = labels.map((label,i) => ({ label, val: vals[i], color: colors[i % colors.length] }))
+    .sort((a,b) => b.val - a.val);
+
+  // Algoritmo squarified treemap simplificado
+  function squarify(items, x, y, w, h) {
+    if (!items.length) return [];
+    if (items.length === 1) {
+      return [{ ...items[0], x, y, w, h }];
+    }
+    const totalVal = items.reduce((s,i) => s+i.val, 0);
+    const isWide = w >= h;
+    const sideLen = isWide ? h : w;
+
+    // Encontrar el mejor corte (greedy, suficiente para pocas categorías)
+    let bestRow = [items[0]];
+    let bestWorst = worstAspect(bestRow, totalVal, sideLen);
+    for (let i = 1; i < items.length; i++) {
+      const candidate = items.slice(0, i+1);
+      const worst = worstAspect(candidate, totalVal, sideLen);
+      if (worst <= bestWorst) {
+        bestRow = candidate;
+        bestWorst = worst;
+      } else break;
+    }
+
+    const rowVal = bestRow.reduce((s,i) => s+i.val, 0);
+    const rowFrac = rowVal / totalVal;
+    const rest = items.slice(bestRow.length);
+
+    let rects = [];
+    if (isWide) {
+      const rowW = w * rowFrac;
+      let cy = y;
+      bestRow.forEach(it => {
+        const itH = h * (it.val / rowVal);
+        rects.push({ ...it, x, y: cy, w: rowW, h: itH });
+        cy += itH;
+      });
+      if (rest.length) rects = rects.concat(squarify(rest, x + rowW, y, w - rowW, h));
+    } else {
+      const rowH = h * rowFrac;
+      let cx = x;
+      bestRow.forEach(it => {
+        const itW = w * (it.val / rowVal);
+        rects.push({ ...it, x: cx, y, w: itW, h: rowH });
+        cx += itW;
+      });
+      if (rest.length) rects = rects.concat(squarify(rest, x, y + rowH, w, h - rowH));
+    }
+    return rects;
+  }
+
+  function worstAspect(row, totalVal, sideLen) {
+    const rowVal = row.reduce((s,i) => s+i.val, 0);
+    const areaTotal = (rowVal / totalVal) * sideLen * sideLen; // aproximación
+    let maxRatio = 0;
+    row.forEach(it => {
+      const area = (it.val / totalVal) * sideLen * sideLen / (rowVal/totalVal || 1);
+      const side1 = sideLen;
+      const side2 = (it.val / rowVal) * (areaTotal / sideLen || 1);
+      const ratio = Math.max(side1/side2, side2/side1);
+      if (ratio > maxRatio) maxRatio = ratio;
+    });
+    return maxRatio;
+  }
+
+  const rects = squarify(items, 0, 0, W, H);
+
+  el.innerHTML = '<div style="position:relative;width:100%;height:' + H + 'px">' +
+    rects.map(r => {
+      const pct = (r.val / sumVal * 100);
+      const area = r.w * r.h;
+      const fontPct = area > 5000 ? '20px' : (area > 1800 ? '15px' : (area > 600 ? '11px' : '9px'));
+      const fontLbl = area > 5000 ? '13px' : (area > 1800 ? '11px' : (area > 600 ? '9px' : '7px'));
+      const showLabel = r.w > 38 && r.h > 28;
+      return '<div style="position:absolute;left:' + r.x + 'px;top:' + r.y + 'px;width:' + Math.max(r.w-3,0) + 'px;height:' + Math.max(r.h-3,0) + 'px;' +
+        'background:' + r.color + ';border-radius:4px;display:flex;flex-direction:column;' +
+        'justify-content:center;align-items:center;text-align:center;padding:3px;overflow:hidden;cursor:default" ' +
+        'title="' + r.label + ': ' + r.val + ' (' + Math.round(pct) + '%)">' +
+        '<span style="font-weight:700;color:#111;font-size:' + fontPct + ';line-height:1">' + Math.round(pct) + '%</span>' +
+        (showLabel ? '<span style="font-size:' + fontLbl + ';color:#111;font-weight:500;margin-top:2px;line-height:1.15">' + r.label + '</span>' : '') +
+      '</div>';
+    }).join('') +
+  '</div>';
+}
+
+// ── TOP PROBLEMAS RECURRENTES ─────────────────────────────────────────────────
+function renderTopProblemas(data) {
+  const counts = {};
+  Object.keys(PROBLEMAS).forEach(p => counts[p] = 0);
+
+  data.forEach(row => {
+    if (!row.Descripcion) return;
+    const desc = row.Descripcion.toLowerCase();
+    Object.entries(PROBLEMAS).forEach(([categoria, keywords]) => {
+      if (keywords.some(kw => desc.includes(kw))) counts[categoria]++;
+    });
+  });
+
+  const sorted = Object.entries(counts).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]);
+  const el = document.getElementById('top-problemas');
+
+  if (!sorted.length) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--muted)">Sin datos en el período.</p>';
+    return;
+  }
+
+  const maxVal = sorted[0][1];
+  const colors = ['#FF5C33','#F5A623','#5B9CF6','#A78BFA','#4CAF7D','#E879A0','#34D399','#FB923C','#9DA5A8','#C9D1D3'];
+  el.innerHTML = sorted.map(([cat, val], i) => {
+    const pct = (val / maxVal * 100).toFixed(0);
+    const color = colors[i % colors.length];
+    return '<div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:3px">' +
+        '<span style="font-size:11px;color:var(--text)">' + cat + '</span>' +
+        '<span style="font-size:11px;font-weight:700;color:' + color + '">' + val + '</span>' +
+      '</div>' +
+      '<div style="background:rgba(255,255,255,0.04);border-radius:3px;height:6px;overflow:hidden">' +
+        '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:3px"></div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── RESET & EVENTS
+function resetDates() {
+  const dates = activeData().map(d => d.date).filter(Boolean).sort();
+  document.getElementById('date-from').value = dates[0] || '2026-05-05';
+  document.getElementById('date-to').value   = dates[dates.length-1] || '2026-05-15';
+  document.getElementById('sup-filter').value = '';
+  document.getElementById('sede-filter').value = '';
+  update();
+}
+
+document.getElementById('date-from').addEventListener('change', update);
+document.getElementById('date-to').addEventListener('change', update);
+
+// Auto-sync robusto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => syncFromSheet());
+} else {
+  syncFromSheet();
+}
+</script>
+</div>
+
+<div id="tab-calificacion" class="tab-panel">
+<div class="cal-scope">
+<div id="status-bar">Conectando con Google Sheets...</div>
+
+<div class="kpis">
+  <div class="kpi"><div class="label">Sedes evaluadas</div><div class="value" id="kpi-sedes">&ndash;</div><div class="sub">con notificación registrada</div></div>
+  <div class="kpi green"><div class="label">Promedio general</div><div class="value" id="kpi-promedio">&ndash;</div><div class="sub">sobre 100 puntos</div></div>
+  <div class="kpi amber"><div class="label">En atención</div><div class="value" id="kpi-atencion">&ndash;</div><div class="sub">mejora a corto plazo</div></div>
+  <div class="kpi red"><div class="label">Críticas</div><div class="value" id="kpi-criticas">&ndash;</div><div class="sub">intervención urgente</div></div>
+</div>
+
+<div class="section">
+  <h2>Ranking de sedes</h2>
+  <input type="text" id="search-input" placeholder="Buscar sede...">
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th data-sort="sede">Sede</th>
+          <th data-sort="score">Puntaje</th>
+          <th>Tendencia</th>
+          <th>Sector más débil</th>
+          <th>Clasificación</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-body">
+        <tr><td colspan="6" class="loader">Cargando ranking...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Vista de detalle por sede</h2>
+  <div class="detail-grid">
+    <div class="detail-card" id="detail-card">
+      <div class="loader">Seleccioná una sede del ranking para ver el detalle.</div>
+    </div>
+
+    <div class="legend-card">
+      <h3>Lógica de puntaje</h3>
+      <div class="legend-row"><span class="legend-dot" style="background:var(--green);"></span>
+        <div><div class="ltitle">Bueno &rarr; 100 pts</div><div class="ldesc">El ítem cumple sin observaciones.</div></div></div>
+      <div class="legend-row"><span class="legend-dot" style="background:var(--amber);"></span>
+        <div><div class="ltitle">Regular &rarr; 70 pts</div><div class="ldesc">Presenta deterioro leve, no urgente.</div></div></div>
+      <div class="legend-row"><span class="legend-dot" style="background:var(--red);"></span>
+        <div><div class="ltitle">Falla &rarr; 0 pts</div><div class="ldesc">Requiere intervención.</div></div></div>
+      <div class="legend-row"><span class="legend-dot" style="background:var(--steel);"></span>
+        <div><div class="ltitle">No tiene &rarr; se excluye</div><div class="ldesc">No aplica para esa sede; no afecta el promedio.</div></div></div>
+
+      <div class="scoring-box">
+        <div class="stitle">Cómo se calcula</div>
+        <div class="srow"><span>Puntaje de sede</span><b>promedio directo de todos los ítems</b></div>
+        <div class="srow"><span>Vista por sector</span><b>solo informativa</b></div>
+      </div>
+
+      <div class="scoring-box">
+        <div class="stitle">Rangos de clasificación</div>
+        <div class="srow"><span>90&ndash;100</span><b style="color:#7FE0A0;">Óptimo</b></div>
+        <div class="srow"><span>75&ndash;89</span><b style="color:#D9C97A;">Bueno</b></div>
+        <div class="srow"><span>60&ndash;74</span><b style="color:#E8B25C;">Atención · mejora corto plazo</b></div>
+        <div class="srow"><span>0&ndash;59</span><b style="color:#F09488;">Crítico · intervención urgente</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Comparación por sector (todas las sedes)</h2>
+  <div class="table-card" style="padding:20px;" id="sector-comparison">
+    <div class="loader">Cargando comparación...</div>
+  </div>
+</div>
+
+<footer>CORE &middot; Dashboard de Calificación de Sedes &middot; Datos en vivo desde Google Sheets</footer>
+</div>
+</div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('btn-tab-' + name).classList.add('active');
+}
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+(function(){
+const SHEET_ID = "1F4E97s1lCF7PvbxyNMqxqeOSW_DALz6_KOQOAOZLNMM";
+const GID = "553536946";
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+
+const SCORE_MAP = { "bueno": 100, "regular": 70, "falla": 0 };
+const EXCLUDE_VALUES = ["no tiene", ""];
+
+let sedesData = [];
+let sectorOrder = [];
+
+function classify(score){
+  if(score >= 90) return {label:"Óptimo", cls:"green"};
+  if(score >= 75) return {label:"Bueno", cls:"green"};
+  if(score >= 60) return {label:"Atención", cls:"amber"};
+  return {label:"Crítico", cls:"red"};
+}
+
+function normalize(v){
+  return (v || "").toString().trim().toLowerCase();
+}
+
+function sectorCodeFromHeader(header){
+  const m = header.match(/^Sector\s+(\S+)/i);
+  return m ? m[1].toUpperCase() : null;
+}
+
+function sectorFullName(code){
+  const map = { "FAC":"Fachada", "REC":"Recepción", "ENT":"Entrenamiento", "BAÑ":"Baños", "BAN":"Baños", "PAT":"Patio" };
+  return map[code] || code;
+}
+
+function loadData(){
+  Papa.parse(CSV_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results){
+      try{
+        processData(results.data, results.meta.fields);
+        setStatus("Conectado a Google Sheets — datos actualizados.", "ok");
+      }catch(e){
+        setStatus("Se conectó al Sheet pero hubo un error al procesar las columnas: " + e.message, "error");
+        console.error(e);
+      }
+    },
+    error: function(err){
+      setStatus("No se pudo conectar al Google Sheet. Verificá que esté publicado/compartido como público. (" + err + ")", "error");
+    }
+  });
+}
+
+function setStatus(msg, cls){
+  const el = document.getElementById("status-bar");
+  el.textContent = msg;
+  el.className = cls || "";
+}
+
+function processData(rows, fields){
+  const sedeCol = fields.find(f => /local/i.test(f) && /sede/i.test(f)) || fields[3];
+  const tsCol = fields.find(f => /marca temporal/i.test(f)) || fields[0];
+  const supCol = fields.find(f => /supervisor/i.test(f)) || fields[1];
+  const obsCol = fields.find(f => /observ/i.test(f));
+  const fotoCol = fields.find(f => /foto/i.test(f));
+
+  const sectorCols = fields.filter(f => /^Sector\s+\S+/i.test(f));
+  sectorOrder = [...new Set(sectorCols.map(sectorCodeFromHeader))];
+
+  const bySede = {};
+  rows.forEach(row => {
+    const sede = (row[sedeCol] || "").trim();
+    if(!sede) return;
+    if(!bySede[sede] || (row[tsCol] || "") > (bySede[sede][tsCol] || "")){
+      bySede[sede] = row;
+    }
+  });
+
+  sedesData = Object.keys(bySede).map(sede => {
+    const row = bySede[sede];
+    let total = 0, count = 0;
+    const sectorScores = {};
+    sectorOrder.forEach(code => { sectorScores[code] = {total:0, count:0}; });
+
+    sectorCols.forEach(col => {
+      const val = normalize(row[col]);
+      if(EXCLUDE_VALUES.includes(val)) return;
+      const score = SCORE_MAP[val];
+      if(score === undefined) return;
+      const code = sectorCodeFromHeader(col);
+      total += score; count++;
+      sectorScores[code].total += score; sectorScores[code].count++;
+    });
+
+    const finalScore = count > 0 ? Math.round(total / count) : null;
+    const sectorAvgs = {};
+    sectorOrder.forEach(code => {
+      const s = sectorScores[code];
+      sectorAvgs[code] = s.count > 0 ? Math.round(s.total / s.count) : null;
+    });
+
+    let weakest = null;
+    sectorOrder.forEach(code => {
+      if(sectorAvgs[code] !== null && (weakest === null || sectorAvgs[code] < sectorAvgs[weakest])){
+        weakest = code;
+      }
+    });
+
+    return {
+      sede,
+      supervisor: row[supCol] || "",
+      timestamp: row[tsCol] || "",
+      score: finalScore,
+      sectorAvgs,
+      weakest,
+      observaciones: obsCol ? row[obsCol] : "",
+      foto: fotoCol ? row[fotoCol] : ""
+    };
+  }).filter(d => d.score !== null);
+
+  sedesData.sort((a,b) => b.score - a.score);
+  renderKPIs();
+  renderRanking(sedesData);
+  renderSectorComparison();
+  if(sedesData.length) renderDetail(sedesData[0]);
+
+  document.getElementById("last-update").textContent = "Corte: " + new Date().toLocaleString("es-AR");
+}
+
+function renderKPIs(){
+  const total = sedesData.length;
+  const avg = total ? Math.round(sedesData.reduce((a,d) => a+d.score,0) / total) : 0;
+  const atencion = sedesData.filter(d => d.score >= 60 && d.score < 75).length;
+  const criticas = sedesData.filter(d => d.score < 60).length;
+  document.getElementById("kpi-sedes").textContent = total;
+  document.getElementById("kpi-promedio").textContent = avg;
+  document.getElementById("kpi-atencion").textContent = atencion;
+  document.getElementById("kpi-criticas").textContent = criticas;
+}
+
+function renderRanking(data){
+  const body = document.getElementById("ranking-body");
+  if(!data.length){
+    body.innerHTML = '<tr><td colspan="6" class="loader">No hay sedes para mostrar.</td></tr>';
+    return;
+  }
+  body.innerHTML = data.map((d,i) => {
+    const c = classify(d.score);
+    const weakestLabel = d.weakest ? sectorFullName(d.weakest) + " (" + d.sectorAvgs[d.weakest] + ")" : "&ndash;";
+    return `<tr data-sede="${encodeURIComponent(d.sede)}">
+      <td><span class="rank-num">${i+1}</span></td>
+      <td><b>${d.sede}</b></td>
+      <td><span class="score-pill ${c.cls}">${d.score}</span></td>
+      <td><div class="bar-track"><div class="bar-fill" style="width:${d.score}%; background:var(--${c.cls === 'green' ? 'green' : c.cls === 'amber' ? 'amber' : 'red'});"></div></div></td>
+      <td>${weakestLabel}</td>
+      <td><span class="tag ${c.cls}">${c.label}</span></td>
+    </tr>`;
+  }).join("");
+
+  body.querySelectorAll("tr[data-sede]").forEach(tr => {
+    tr.addEventListener("click", () => {
+      const sede = decodeURIComponent(tr.getAttribute("data-sede"));
+      const d = sedesData.find(x => x.sede === sede);
+      if(d) renderDetail(d);
+    });
+  });
+}
+
+function renderDetail(d){
+  const c = classify(d.score);
+  const rows = sectorOrder.map(code => {
+    const val = d.sectorAvgs[code];
+    if(val === null) return "";
+    const cls = val >= 75 ? "green" : val >= 60 ? "amber" : "red";
+    const colorVar = cls === "green" ? "var(--green)" : cls === "amber" ? "var(--amber)" : "var(--red)";
+    return `<div class="sector-row">
+      <span class="name">${sectorFullName(code)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${val}%; background:${colorVar};"></div></div>
+      <span class="score-mini" style="color:${colorVar};">${val}</span>
+    </div>`;
+  }).join("");
+
+  let actionMsg = "";
+  let actionCls = "green";
+  if(d.score < 60){
+    actionMsg = `<b>Acción sugerida:</b> Puntaje crítico — programar intervención urgente, priorizando el sector ${sectorFullName(d.weakest)}.`;
+    actionCls = "red";
+  } else if(d.score < 75){
+    actionMsg = `<b>Acción sugerida:</b> Programar mejora a corto plazo en el sector ${sectorFullName(d.weakest)} (próximos 15 días).`;
+    actionCls = "amber";
+  } else {
+    actionMsg = `<b>Estado:</b> Sin acciones urgentes. Mantener monitoreo de rutina.`;
+    actionCls = "green";
+  }
+
+  const obs = d.observaciones ? `<div style="margin-top:12px; font-size:12px; color:var(--gray-dark);"><b>Observaciones:</b> ${d.observaciones}</div>` : "";
+  const foto = d.foto ? `<div style="margin-top:6px; font-size:12px;"><a href="${d.foto}" target="_blank" style="color:var(--orange);">Ver foto / video adjunto</a></div>` : "";
+
+  document.getElementById("detail-card").innerHTML = `
+    <div class="sede-name">${d.sede}</div>
+    <div class="sede-meta">Supervisor: ${d.supervisor || "&ndash;"} &nbsp;&middot;&nbsp; Última notificación: ${d.timestamp || "&ndash;"} &nbsp;&middot;&nbsp; Puntaje: ${d.score}/100</div>
+    ${rows}
+    <div class="action-box ${actionCls}">${actionMsg}</div>
+    ${obs}${foto}
+  `;
+}
+
+function renderSectorComparison(){
+  const el = document.getElementById("sector-comparison");
+  if(!sedesData.length){ el.innerHTML = '<div class="loader">Sin datos.</div>'; return; }
+  const html = sectorOrder.map(code => {
+    const vals = sedesData.map(d => d.sectorAvgs[code]).filter(v => v !== null);
+    if(!vals.length) return "";
+    const avg = Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+    const cls = avg >= 75 ? "green" : avg >= 60 ? "amber" : "red";
+    const colorVar = cls === "green" ? "var(--green)" : cls === "amber" ? "var(--amber)" : "var(--red)";
+    return `<div class="sector-row">
+      <span class="name" style="width:160px;">${sectorFullName(code)}</span>
+      <div class="bar-track" style="width:70%;"><div class="bar-fill" style="width:${avg}%; background:${colorVar};"></div></div>
+      <span class="score-mini" style="color:${colorVar};">${avg}</span>
+    </div>`;
+  }).join("");
+  el.innerHTML = html;
+}
+
+document.getElementById("search-input").addEventListener("input", (e) => {
+  const q = e.target.value.toLowerCase();
+  renderRanking(sedesData.filter(d => d.sede.toLowerCase().includes(q)));
+});
+
+loadData();
+})();
+</script>
+
+</body>
+</html>

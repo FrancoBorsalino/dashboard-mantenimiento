@@ -424,6 +424,28 @@
 .cal-scope .kpi.green{border-top-color:var(--green);}
 .cal-scope .kpi.amber{border-top-color:var(--amber);}
 .cal-scope .kpi.red{border-top-color:var(--red);}
+.cal-scope .kpi:hover[onclick]{box-shadow:0 2px 10px rgba(0,0,0,.06);}
+
+/* DETAIL PANEL (atención / críticas) */
+.cal-scope .cal-detail-section{
+  display:none;
+  background:var(--white);
+  border-radius:10px;
+  padding:20px 22px;
+  margin-bottom:28px;
+  animation: calSlideDown .25s ease;
+}
+.cal-scope .cal-detail-section.open{ display:block; }
+@keyframes calSlideDown{ from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);} }
+.cal-scope .cal-detail-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.cal-scope .cal-detail-title{ font-size:13px; font-weight:700; color:var(--dark); text-transform:uppercase; letter-spacing:.06em; }
+.cal-scope .cal-detail-close{ background:transparent; border:1px solid #E0E0E0; color:var(--steel); font-family:'Roboto',sans-serif; font-size:11px; padding:.3rem .7rem; border-radius:4px; cursor:pointer; }
+.cal-scope .cal-detail-close:hover{ border-color:var(--orange); color:var(--orange); }
+.cal-scope .cal-cards-wrap{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+.cal-scope .cal-card{ background:#FAFAFA; border:1px solid #ECEDED; border-radius:8px; padding:14px 16px; }
+.cal-scope .cal-card .cal-card-sede{ font-size:14px; font-weight:700; color:var(--dark); margin-bottom:8px; }
+.cal-scope .cal-card .cal-card-row{ font-size:12px; color:var(--gray-dark); margin-top:5px; }
+.cal-scope .cal-card .cal-card-row b{ color:var(--dark); }
 
 .cal-scope .section{margin-bottom:32px;}
 .cal-scope .section h2{font-size:16px; color:var(--dark); margin-bottom:14px; display:flex; align-items:center; gap:8px;}
@@ -433,6 +455,10 @@
 .cal-scope table{width:100%; border-collapse:collapse; font-size:13px;}
 .cal-scope thead tr{background:var(--dark); color:var(--white);}
 .cal-scope thead th{padding:12px 14px; text-align:left; font-weight:500; font-size:12px; text-transform:uppercase; letter-spacing:.4px; cursor:pointer; user-select:none;}
+.cal-scope thead th[data-sort]{position:relative; padding-right:24px;}
+.cal-scope thead th[data-sort]::after{content:'⇅'; position:absolute; right:8px; opacity:.4; font-size:10px;}
+.cal-scope thead th[data-sort].sorted-asc::after{content:'↑'; opacity:1; color:var(--orange);}
+.cal-scope thead th[data-sort].sorted-desc::after{content:'↓'; opacity:1; color:var(--orange);}
 .cal-scope tbody tr{border-bottom:1px solid #ECEDED; cursor:pointer;}
 .cal-scope tbody tr:last-child{border-bottom:none;}
 .cal-scope tbody td{padding:11px 14px; vertical-align:middle;}
@@ -1333,8 +1359,32 @@ if (document.readyState === 'loading') {
 <div class="kpis">
   <div class="kpi"><div class="label">Sedes evaluadas</div><div class="value" id="kpi-sedes">&ndash;</div><div class="sub">con notificación registrada</div></div>
   <div class="kpi green"><div class="label">Promedio general</div><div class="value" id="kpi-promedio">&ndash;</div><div class="sub">sobre 100 puntos</div></div>
-  <div class="kpi amber"><div class="label">En atención</div><div class="value" id="kpi-atencion">&ndash;</div><div class="sub">mejora a corto plazo</div></div>
-  <div class="kpi red"><div class="label">Críticas</div><div class="value" id="kpi-criticas">&ndash;</div><div class="sub">intervención urgente</div></div>
+  <div class="kpi amber" id="kpi-atencion-box" onclick="toggleCalDetail('atencion')" style="cursor:pointer">
+    <div class="label">En atención <span style="opacity:.5">▾</span></div>
+    <div class="value" id="kpi-atencion">&ndash;</div>
+    <div class="sub">mejora a corto plazo</div>
+  </div>
+  <div class="kpi red" id="kpi-criticas-box" onclick="toggleCalDetail('criticas')" style="cursor:pointer">
+    <div class="label">Críticas <span style="opacity:.5">▾</span></div>
+    <div class="value" id="kpi-criticas">&ndash;</div>
+    <div class="sub">intervención urgente</div>
+  </div>
+</div>
+
+<div class="cal-detail-section" id="cal-detail-atencion">
+  <div class="cal-detail-header">
+    <span class="cal-detail-title">Sedes en atención · detalle</span>
+    <button class="cal-detail-close" onclick="toggleCalDetail('atencion')">Cerrar ✕</button>
+  </div>
+  <div class="cal-cards-wrap" id="cal-detail-atencion-cards"></div>
+</div>
+
+<div class="cal-detail-section" id="cal-detail-criticas">
+  <div class="cal-detail-header">
+    <span class="cal-detail-title">Sedes críticas · detalle</span>
+    <button class="cal-detail-close" onclick="toggleCalDetail('criticas')">Cerrar ✕</button>
+  </div>
+  <div class="cal-cards-wrap" id="cal-detail-criticas-cards"></div>
 </div>
 
 <div class="section">
@@ -1347,9 +1397,9 @@ if (document.readyState === 'loading') {
           <th>#</th>
           <th data-sort="sede">Sede</th>
           <th data-sort="score">Puntaje</th>
-          <th>Tendencia</th>
-          <th>Sector más débil</th>
-          <th>Clasificación</th>
+          <th data-sort="tendencia">Tendencia</th>
+          <th data-sort="weakest">Sector más débil</th>
+          <th data-sort="clasificacion">Clasificación</th>
         </tr>
       </thead>
       <tbody id="ranking-body">
@@ -1427,6 +1477,61 @@ const EXCLUDE_VALUES = ["no tiene", ""];
 
 let sedesData = [];
 let sectorOrder = [];
+let currentSort = { key: 'score', dir: 'desc' };
+
+const SORT_ACCESSORS = {
+  sede: d => (d.sede || '').toLowerCase(),
+  score: d => d.score,
+  tendencia: d => d.score,
+  clasificacion: d => d.score,
+  weakest: d => d.weakest ? sectorFullName(d.weakest).toLowerCase() : ''
+};
+
+function applySort(){
+  const acc = SORT_ACCESSORS[currentSort.key] || SORT_ACCESSORS.score;
+  const mul = currentSort.dir === 'asc' ? 1 : -1;
+  sedesData.sort((a, b) => {
+    const va = acc(a), vb = acc(b);
+    if (typeof va === 'string') return va.localeCompare(vb) * mul;
+    return (va - vb) * mul;
+  });
+}
+
+function updateSortHeaders(){
+  document.querySelectorAll('.table-card thead th[data-sort]').forEach(th => {
+    th.classList.remove('sorted-asc', 'sorted-desc');
+    if (th.getAttribute('data-sort') === currentSort.key) {
+      th.classList.add(currentSort.dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+    }
+  });
+}
+
+function sortSedes(key){
+  if (currentSort.key === key) {
+    currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.key = key;
+    currentSort.dir = (key === 'sede' || key === 'weakest') ? 'asc' : 'desc';
+  }
+  applySort();
+  updateSortHeaders();
+  const q = (document.getElementById('search-input').value || '').toLowerCase();
+  renderRanking(sedesData.filter(d => d.sede.toLowerCase().includes(q)));
+}
+
+// Convierte "Marca temporal" (formato es-AR DD/MM/AAAA HH:mm:ss) a timestamp comparable.
+// Prioriza el parseo manual porque Date.parse() interpreta mal el formato DD/MM.
+function parseTimestamp(str){
+  if (!str) return 0;
+  str = str.toString().trim();
+  const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[ ,T]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (m) {
+    const [, d, mo, y, h, mi, s] = m;
+    return new Date(+y, +mo - 1, +d, +h, +mi, +(s || 0)).getTime();
+  }
+  const t = Date.parse(str);
+  return isNaN(t) ? 0 : t;
+}
 
 function classify(score){
   if(score >= 90) return {label:"Óptimo", cls:"green"};
@@ -1493,10 +1598,13 @@ function processData(rows, fields){
   sectorOrder = [...new Set(sectorCols.map(sectorCodeFromHeader))];
 
   const bySede = {};
+  const bySedeTs = {};
   rows.forEach(row => {
     const sede = (row[sedeCol] || "").trim();
     if(!sede) return;
-    if(!bySede[sede] || (row[tsCol] || "") > (bySede[sede][tsCol] || "")){
+    const ts = parseTimestamp(row[tsCol]);
+    if(!(sede in bySedeTs) || ts >= bySedeTs[sede]){
+      bySedeTs[sede] = ts;
       bySede[sede] = row;
     }
   });
@@ -1543,11 +1651,13 @@ function processData(rows, fields){
     };
   }).filter(d => d.score !== null);
 
-  sedesData.sort((a,b) => b.score - a.score);
+  applySort();
+  updateSortHeaders();
   renderKPIs();
   renderRanking(sedesData);
   renderSectorComparison();
   if(sedesData.length) renderDetail(sedesData[0]);
+  refreshOpenCalDetails();
 
   document.getElementById("last-update").textContent = "Corte: " + new Date().toLocaleString("es-AR");
 }
@@ -1561,6 +1671,54 @@ function renderKPIs(){
   document.getElementById("kpi-promedio").textContent = avg;
   document.getElementById("kpi-atencion").textContent = atencion;
   document.getElementById("kpi-criticas").textContent = criticas;
+}
+
+function calDetailData(which){
+  return which === 'atencion'
+    ? sedesData.filter(d => d.score >= 60 && d.score < 75).sort((a,b) => a.score - b.score)
+    : sedesData.filter(d => d.score < 60).sort((a,b) => a.score - b.score);
+}
+
+function toggleCalDetail(which){
+  const el = document.getElementById('cal-detail-' + which);
+  if (!el) return;
+  const isOpen = el.classList.contains('open');
+  ['atencion','criticas'].forEach(w => document.getElementById('cal-detail-' + w).classList.remove('open'));
+  if (!isOpen) {
+    el.classList.add('open');
+    renderCalDetailCards(which, calDetailData(which));
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+window.toggleCalDetail = toggleCalDetail;
+
+function refreshOpenCalDetails(){
+  ['atencion','criticas'].forEach(which => {
+    const el = document.getElementById('cal-detail-' + which);
+    if (el && el.classList.contains('open')) {
+      renderCalDetailCards(which, calDetailData(which));
+    }
+  });
+}
+
+function renderCalDetailCards(which, data){
+  const wrap = document.getElementById('cal-detail-' + which + '-cards');
+  if (!wrap) return;
+  if (!data.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--steel)">No hay sedes en esta categoría.</p>';
+    return;
+  }
+  wrap.innerHTML = data.map(d => {
+    const c = classify(d.score);
+    const weakestLabel = d.weakest ? sectorFullName(d.weakest) + " (" + d.sectorAvgs[d.weakest] + ")" : "&ndash;";
+    return `<div class="cal-card">
+      <div class="cal-card-sede">${d.sede}</div>
+      <span class="score-pill ${c.cls}">${d.score}</span>
+      <div class="cal-card-row"><b>Sector más débil:</b> ${weakestLabel}</div>
+      <div class="cal-card-row"><b>Supervisor:</b> ${d.supervisor || "&ndash;"}</div>
+      <div class="cal-card-row"><b>Última notificación:</b> ${d.timestamp || "&ndash;"}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderRanking(data){
@@ -1652,6 +1810,11 @@ document.getElementById("search-input").addEventListener("input", (e) => {
   const q = e.target.value.toLowerCase();
   renderRanking(sedesData.filter(d => d.sede.toLowerCase().includes(q)));
 });
+
+document.querySelectorAll('.table-card thead th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => sortSedes(th.getAttribute('data-sort')));
+});
+updateSortHeaders();
 
 loadData();
 })();

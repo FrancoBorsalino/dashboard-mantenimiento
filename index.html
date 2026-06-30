@@ -92,7 +92,13 @@
     border-bottom: 1px solid var(--border);
     padding: 0 2.5rem;
     display: flex;
+    justify-content: center;
     gap: 4px;
+    transition: background .3s ease, border-color .3s ease;
+  }
+  .tabs-bar.light {
+    background: #E3E5E5;
+    border-bottom: 1px solid rgba(0,0,0,.08);
   }
   .tab-btn {
     background: transparent;
@@ -103,11 +109,14 @@
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: .08em;
-    padding: .9rem 1.1rem .8rem;
+    padding: .9rem 2.5rem .8rem;
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: color .15s, border-color .15s;
   }
+  .tabs-bar.light .tab-btn { color: var(--gray-dark); }
+  .tabs-bar.light .tab-btn:hover { color: var(--dark); }
+  .tabs-bar.light .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
   .tab-btn:hover { color: var(--text); }
   .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
 
@@ -454,7 +463,7 @@
   </div>
 </header>
 
-<div class="tabs-bar">
+<div class="tabs-bar" id="tabs-bar">
   <button class="tab-btn active" id="btn-tab-mantenimiento" onclick="switchTab('mantenimiento')">Mantenimiento</button>
   <button class="tab-btn" id="btn-tab-calificacion" onclick="switchTab('calificacion')">Calificación de sedes</button>
 </div>
@@ -1285,6 +1294,9 @@ if (document.readyState === 'loading') {
 
 <div id="tab-calificacion" class="tab-panel">
 <div class="cal-scope">
+<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+  <div class="date" id="last-update" style="font-size:13px;color:var(--gray-dark)">Cargando datos...</div>
+</div>
 <div id="status-bar">Conectando con Google Sheets...</div>
 
 <div class="kpis">
@@ -1368,6 +1380,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   document.getElementById('btn-tab-' + name).classList.add('active');
+  document.getElementById('tabs-bar').classList.toggle('light', name === 'calificacion');
 }
 </script>
 

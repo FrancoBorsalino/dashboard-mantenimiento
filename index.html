@@ -495,14 +495,34 @@
 .cal-scope .detail-card{background:var(--white); border-radius:10px; padding:22px; min-height:200px;}
 .cal-scope .detail-card .sede-name{font-size:18px; font-weight:700; color:var(--dark);}
 .cal-scope .detail-card .sede-meta{font-size:12px; color:var(--steel); margin-bottom:18px;}
-.cal-scope .sector-row{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid #F1F1F1; gap:10px;}
-.cal-scope .sector-row:last-child{border-bottom:none;}
+.cal-scope .sector-block:last-child .sector-row{border-bottom:none;}
+.cal-scope .sector-row{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid #F1F1F1; gap:10px; cursor:pointer;}
+.cal-scope .sector-row:hover{opacity:.8;}
 .cal-scope .sector-row .name{font-size:13px; color:var(--gray-dark); width:140px; flex-shrink:0;}
 .cal-scope .sector-row .score-mini{font-size:13px; font-weight:700; width:36px; text-align:right;}
+.cal-scope .sector-flag-count{display:inline-block; background:var(--amber); color:#fff; font-size:9px; font-weight:700; border-radius:10px; padding:1px 6px; margin-left:6px; vertical-align:middle;}
+.cal-scope .sector-chevron{font-size:9px; color:var(--steel); flex-shrink:0; width:10px; text-align:center;}
+.cal-scope .sector-items-panel{display:none; padding:2px 0 10px 4px;}
+.cal-scope .sector-items-panel.open{display:block;}
+.cal-scope .sector-item-row{display:flex; align-items:center; gap:8px; font-size:12px; padding:6px 10px; border-radius:6px; background:#FAFAFA; margin-bottom:4px;}
+.cal-scope .sector-item-dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+.cal-scope .sector-item-dot.red{background:var(--red);}
+.cal-scope .sector-item-dot.amber{background:var(--amber);}
+.cal-scope .sector-item-name{flex:1; color:var(--dark);}
+.cal-scope .sector-item-ok{font-size:12px; color:var(--green); padding:6px 10px;}
 .cal-scope .action-box{margin-top:16px; border-radius:6px; padding:10px 14px; font-size:12px;}
 .cal-scope .action-box.red{background:var(--red-bg); color:var(--red);}
 .cal-scope .action-box.amber{background:var(--amber-bg); color:var(--amber);}
 .cal-scope .action-box.green{background:var(--green-bg); color:var(--green);}
+
+.cal-scope .cal-changes-meta{font-size:12px; color:var(--steel); margin-bottom:14px;}
+.cal-scope .cal-changes-group{margin-bottom:18px;}
+.cal-scope .cal-changes-group:last-child{margin-bottom:0;}
+.cal-scope .cal-changes-group-title{font-size:12px; font-weight:700; color:var(--dark); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;}
+.cal-scope .cal-change-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid #F1F1F1; font-size:13px;}
+.cal-scope .cal-change-row:last-child{border-bottom:none;}
+.cal-scope .cal-change-item{flex:1; color:var(--dark);}
+.cal-scope .cal-change-transition{color:var(--steel); font-size:12px; white-space:nowrap;}
 
 .cal-scope .legend-card{background:var(--dark); border-radius:10px; padding:22px; color:var(--white);}
 .cal-scope .legend-card h3{font-size:14px; margin-bottom:14px; color:var(--white);}
@@ -1518,6 +1538,13 @@ if (document.readyState === 'loading') {
 </div>
 
 <div class="section">
+  <h2>Mejoras y peoras vs. informe anterior</h2>
+  <div class="table-card" style="padding:20px;" id="cal-changes">
+    <div class="loader">Seleccioná una sede del ranking para ver la comparación.</div>
+  </div>
+</div>
+
+<div class="section">
   <h2>Comparación por sector (todas las sedes)</h2>
   <div class="table-card" style="padding:20px;" id="sector-comparison">
     <div class="loader">Cargando comparación...</div>
@@ -1628,6 +1655,7 @@ let sectorOrder = [];
 let currentSort = { key: 'score', dir: 'desc' };
 let rawRows = [];
 let rawFields = [];
+let COLS = null;
 
 const SORT_ACCESSORS = {
   sede: d => (d.sede || '').toLowerCase(),
@@ -1748,6 +1776,19 @@ function sectorFullName(code){
   return map[code] || code;
 }
 
+// Extrae el nombre del ítem puntual dentro de una columna de sector.
+// Ej: "Sector FAC - Blindex" + código "FAC" -> "Blindex"
+function sectorItemLabel(header, code){
+  const re = new RegExp('^Sector\\s+' + code + '\\s*[-:–]?\\s*', 'i');
+  const rest = header.replace(re, '').trim();
+  return rest || header;
+}
+
+function capitalizeStatus(s){
+  const map = { bueno: 'Bueno', regular: 'Regular', falla: 'Falla' };
+  return map[s] || s;
+}
+
 function loadData(){
   const btn = document.getElementById("btn-cal-sync");
   if (btn) btn.disabled = true;
@@ -1806,7 +1847,8 @@ function buildEntry(row, sedeCol, tsCol, supCol, obsCol, fotoCol, sectorCols, se
   const sedeRaw = (row[sedeCol] || "").trim();
   let total = 0, count = 0;
   const sectorScores = {};
-  sectorOrder.forEach(code => { sectorScores[code] = {total:0, count:0}; });
+  const itemsBySector = {};
+  sectorOrder.forEach(code => { sectorScores[code] = {total:0, count:0}; itemsBySector[code] = []; });
 
   sectorCols.forEach(col => {
     const val = normalize(row[col]);
@@ -1816,6 +1858,7 @@ function buildEntry(row, sedeCol, tsCol, supCol, obsCol, fotoCol, sectorCols, se
     const code = sectorCodeFromHeader(col);
     total += score; count++;
     sectorScores[code].total += score; sectorScores[code].count++;
+    itemsBySector[code].push({ label: sectorItemLabel(col, code), status: val });
   });
 
   const finalScore = count > 0 ? Math.round(total / count) : null;
@@ -1840,10 +1883,53 @@ function buildEntry(row, sedeCol, tsCol, supCol, obsCol, fotoCol, sectorCols, se
     timestamp: row[tsCol] || "",
     score: finalScore,
     sectorAvgs,
+    itemsBySector,
     weakest,
     observaciones: obsCol ? row[obsCol] : "",
     foto: fotoCol ? row[fotoCol] : ""
   };
+}
+
+// Devuelve TODAS las cargas históricas de una sede (por código), sin importar filtros
+// de mes/sede activos — se usa para la comparación "vs. informe anterior".
+function getSedeHistoryAll(code){
+  if (!COLS || !code || !rawRows.length) return [];
+  return rawRows
+    .filter(row => getSedeInfo(row[COLS.sedeCol]).code === code)
+    .map(row => buildEntry(row, COLS.sedeCol, COLS.tsCol, COLS.supCol, COLS.obsCol, COLS.fotoCol, COLS.sectorCols, sectorOrder))
+    .filter(e => e.score !== null)
+    .sort((a, b) => parseTimestamp(b.timestamp) - parseTimestamp(a.timestamp));
+}
+
+function getPreviousEntry(d){
+  if (!d.code) return null;
+  const hist = getSedeHistoryAll(d.code);
+  const idx = hist.findIndex(e => e.timestamp === d.timestamp);
+  if (idx === -1 || idx + 1 >= hist.length) return null;
+  return hist[idx + 1];
+}
+
+// Compara ítem por ítem el informe actual contra el anterior y detecta cambios de estado.
+function computeChanges(current, previous){
+  if (!previous) return [];
+  const rank = { falla: 0, regular: 1, bueno: 2 };
+  const changes = [];
+  sectorOrder.forEach(code => {
+    const curItems = current.itemsBySector[code] || [];
+    const prevItems = previous.itemsBySector[code] || [];
+    curItems.forEach(ci => {
+      const pi = prevItems.find(p => p.label === ci.label);
+      if (!pi || pi.status === ci.status) return;
+      changes.push({
+        sectorName: sectorFullName(code),
+        item: ci.label,
+        from: pi.status,
+        to: ci.status,
+        improved: rank[ci.status] > rank[pi.status]
+      });
+    });
+  });
+  return changes;
 }
 
 function processData(rows, fields){
@@ -1855,6 +1941,7 @@ function processData(rows, fields){
 
   const sectorCols = fields.filter(f => /^Sector\s+\S+/i.test(f));
   sectorOrder = [...new Set(sectorCols.map(sectorCodeFromHeader))];
+  COLS = { sedeCol, tsCol, supCol, obsCol, fotoCol, sectorCols };
 
   populateMonthFilter(rows, tsCol);
   const monthVal = document.getElementById('month-filter').value;
@@ -2031,17 +2118,26 @@ function renderRanking(data){
   });
 }
 
+let currentDetailEntry = null;
+
 function renderDetail(d){
+  currentDetailEntry = d;
   const c = classify(d.score);
   const rows = sectorOrder.map(code => {
     const val = d.sectorAvgs[code];
     if(val === null) return "";
     const cls = val >= 75 ? "green" : val >= 60 ? "amber" : "red";
     const colorVar = cls === "green" ? "var(--green)" : cls === "amber" ? "var(--amber)" : "var(--red)";
-    return `<div class="sector-row">
-      <span class="name">${sectorFullName(code)}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${val}%; background:${colorVar};"></div></div>
-      <span class="score-mini" style="color:${colorVar};">${val}</span>
+    const flagged = (d.itemsBySector[code] || []).filter(it => it.status !== "bueno");
+    const countBadge = flagged.length ? `<span class="sector-flag-count">${flagged.length}</span>` : "";
+    return `<div class="sector-block">
+      <div class="sector-row" onclick="toggleSectorItems('${code}')">
+        <span class="name">${sectorFullName(code)}${countBadge}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${val}%; background:${colorVar};"></div></div>
+        <span class="score-mini" style="color:${colorVar};">${val}</span>
+        <span class="sector-chevron">▾</span>
+      </div>
+      <div class="sector-items-panel" id="sector-items-${code}"></div>
     </div>`;
   }).join("");
 
@@ -2068,6 +2164,80 @@ function renderDetail(d){
     <div class="action-box ${actionCls}">${actionMsg}</div>
     ${obs}${foto}
   `;
+
+  renderChanges(d);
+}
+
+// Despliega, dentro del detalle de sede, los ítems en "regular" o "falla" de un sector puntual.
+// Los ítems en "bueno" no se muestran (no aportan nada a revisar).
+function toggleSectorItems(code){
+  const panel = document.getElementById('sector-items-' + code);
+  if (!panel || !currentDetailEntry) return;
+  const isOpen = panel.classList.contains('open');
+  document.querySelectorAll('.sector-items-panel.open').forEach(p => p.classList.remove('open'));
+  if (isOpen) return;
+
+  const items = (currentDetailEntry.itemsBySector[code] || []).filter(it => it.status !== 'bueno');
+  if (!items.length) {
+    panel.innerHTML = '<div class="sector-item-ok">✓ Todos los ítems de este sector están en buen estado.</div>';
+  } else {
+    panel.innerHTML = items.map(it => {
+      const cls = it.status === 'falla' ? 'red' : 'amber';
+      const label = it.status === 'falla' ? 'Falla' : 'Regular';
+      return `<div class="sector-item-row">
+        <span class="sector-item-dot ${cls}"></span>
+        <span class="sector-item-name">${it.label}</span>
+        <span class="tag ${cls}">${label}</span>
+      </div>`;
+    }).join('');
+  }
+  panel.classList.add('open');
+}
+window.toggleSectorItems = toggleSectorItems;
+
+// Compara el informe actual contra el inmediatamente anterior de la MISMA sede
+// (usando el historial completo, sin importar el filtro de mes/sede activo).
+function renderChanges(d){
+  const el = document.getElementById('cal-changes');
+  if (!el) return;
+
+  const previous = getPreviousEntry(d);
+  if (!previous) {
+    el.innerHTML = '<div class="loader">No hay una notificación anterior de esta sede para comparar todavía.</div>';
+    return;
+  }
+
+  const changes = computeChanges(d, previous);
+  const prevDateLabel = formatShortDate(previous.timestamp);
+
+  if (!changes.length) {
+    el.innerHTML = `<div class="loader">Sin cambios de estado en ningún ítem respecto a la notificación anterior (${prevDateLabel}).</div>`;
+    return;
+  }
+
+  const worsened = changes.filter(c => !c.improved).sort((a,b) => (a.to === 'falla' ? 0 : 1) - (b.to === 'falla' ? 0 : 1));
+  const improved = changes.filter(c => c.improved);
+
+  const renderRow = c => {
+    const badgeCls = c.improved ? 'green' : (c.to === 'falla' ? 'red' : 'amber');
+    const badgeLabel = c.improved ? (c.to === 'bueno' ? 'Resuelto' : 'Mejoró') : (c.to === 'falla' ? 'Urgente' : 'Verificar');
+    return `<div class="cal-change-row">
+      <span class="cal-change-item"><b>${c.sectorName}</b> · ${c.item}</span>
+      <span class="cal-change-transition">${capitalizeStatus(c.from)} &rarr; ${capitalizeStatus(c.to)}</span>
+      <span class="tag ${badgeCls}">${badgeLabel}</span>
+    </div>`;
+  };
+
+  const groupHtml = (title, icon, list) => !list.length ? '' : `
+    <div class="cal-changes-group">
+      <div class="cal-changes-group-title">${icon} ${title} (${list.length})</div>
+      ${list.map(renderRow).join('')}
+    </div>`;
+
+  el.innerHTML =
+    `<div class="cal-changes-meta">Comparando contra la notificación del ${prevDateLabel}</div>` +
+    groupHtml('A revisar', '⚠️', worsened) +
+    groupHtml('Mejoras', '✅', improved);
 }
 
 function renderSectorComparison(){

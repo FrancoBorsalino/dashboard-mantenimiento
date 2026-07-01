@@ -1371,7 +1371,7 @@ if (document.readyState === 'loading') {
   <div id="status-bar">Conectando con Google Sheets...</div>
   <div class="cal-filter-group">
     <span class="cal-filter-label">Sede</span>
-    <select id="sede-filter" onchange="onSedeFilterChange()">
+    <select id="cal-sede-filter" onchange="onSedeFilterChange()">
       <option value="">Todas las sedes</option>
       <option value="1">01 · Recoleta</option>
       <option value="2">02 · Cañitas II</option>
@@ -1786,7 +1786,7 @@ window.onMonthFilterChange = onMonthFilterChange;
 // ver primero la carga más reciente. Al volver a "Todas las sedes" restauramos
 // el orden por puntaje.
 function onSedeFilterChange(){
-  const sedeVal = document.getElementById('sede-filter').value;
+  const sedeVal = document.getElementById('cal-sede-filter').value;
   currentSort = sedeVal ? { key: 'fecha', dir: 'desc' } : { key: 'score', dir: 'desc' };
   updateSortHeaders();
   if (rawRows.length) processData(rawRows, rawFields);
@@ -1858,7 +1858,7 @@ function processData(rows, fields){
 
   populateMonthFilter(rows, tsCol);
   const monthVal = document.getElementById('month-filter').value;
-  const sedeVal = document.getElementById('sede-filter').value;
+  const sedeVal = document.getElementById('cal-sede-filter').value;
   const periodRows = monthVal ? rows.filter(r => monthKeyFromStr(r[tsCol]) === monthVal) : rows;
 
   const titleEl = document.getElementById('ranking-title');
@@ -1902,7 +1902,7 @@ function processData(rows, fields){
 }
 
 function renderKPIs(){
-  const sedeVal = document.getElementById('sede-filter').value;
+  const sedeVal = document.getElementById('cal-sede-filter').value;
   const monthVal = document.getElementById('month-filter').value;
   const box = document.getElementById('kpi-sedes-box');
   const sub = document.getElementById('kpi-sedes-sub');

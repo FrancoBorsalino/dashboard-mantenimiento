@@ -1987,6 +1987,25 @@ function computeChanges(current, previous){
   return changes;
 }
 
+// Ítems que YA estaban en regular/falla en el informe anterior y SIGUEN igual —
+// no son "cambios" (no mejoraron ni empeoraron), pero es justamente lo que no hay que perder de vista.
+function computePersistentIssues(current, previous){
+  if (!previous) return [];
+  const persistent = [];
+  sectorOrder.forEach(code => {
+    const curItems = current.itemsBySector[code] || [];
+    const prevItems = previous.itemsBySector[code] || [];
+    curItems.forEach(ci => {
+      if (ci.status === 'bueno') return;
+      const pi = prevItems.find(p => p.label === ci.label);
+      if (pi && pi.status === ci.status) {
+        persistent.push({ sectorName: sectorFullName(code), item: ci.label, status: ci.status });
+      }
+    });
+  });
+  return persistent.sort((a,b) => (a.status === 'falla' ? 0 : 1) - (b.status === 'falla' ? 0 : 1));
+}
+
 function processData(rows, fields){
   const sedeCol = fields.find(f => /local/i.test(f) && /sede/i.test(f)) || fields[3];
   const tsCol = fields.find(f => /marca temporal/i.test(f)) || fields[0];
@@ -2265,17 +2284,18 @@ function renderChanges(d){
   }
 
   const changes = computeChanges(d, previous);
+  const persistent = computePersistentIssues(d, previous);
   const prevDateLabel = formatShortDate(previous.timestamp);
 
-  if (!changes.length) {
-    el.innerHTML = `<div class="loader">Sin cambios de estado en ningún ítem respecto a la notificación anterior (${prevDateLabel}).</div>`;
+  if (!changes.length && !persistent.length) {
+    el.innerHTML = `<div class="loader">Sin cambios de estado y sin ítems pendientes respecto a la notificación anterior (${prevDateLabel}).</div>`;
     return;
   }
 
   const worsened = changes.filter(c => !c.improved).sort((a,b) => (a.to === 'falla' ? 0 : 1) - (b.to === 'falla' ? 0 : 1));
   const improved = changes.filter(c => c.improved);
 
-  const renderRow = c => {
+  const renderChangeRow = c => {
     const badgeCls = c.improved ? 'green' : (c.to === 'falla' ? 'red' : 'amber');
     const badgeLabel = c.improved ? (c.to === 'bueno' ? 'Resuelto' : 'Mejoró') : (c.to === 'falla' ? 'Urgente' : 'Verificar');
     return `<div class="cal-change-row">
@@ -2285,16 +2305,26 @@ function renderChanges(d){
     </div>`;
   };
 
-  const groupHtml = (title, icon, list) => !list.length ? '' : `
+  const renderPersistentRow = p => {
+    const badgeCls = p.status === 'falla' ? 'red' : 'amber';
+    return `<div class="cal-change-row">
+      <span class="cal-change-item"><b>${p.sectorName}</b> · ${p.item}</span>
+      <span class="cal-change-transition">Sigue en ${capitalizeStatus(p.status).toLowerCase()}</span>
+      <span class="tag ${badgeCls}">Persiste</span>
+    </div>`;
+  };
+
+  const groupHtml = (title, icon, list, renderFn) => !list.length ? '' : `
     <div class="cal-changes-group">
       <div class="cal-changes-group-title">${icon} ${title} (${list.length})</div>
-      ${list.map(renderRow).join('')}
+      ${list.map(renderFn).join('')}
     </div>`;
 
   el.innerHTML =
     `<div class="cal-changes-meta">Comparando contra la notificación del ${prevDateLabel}</div>` +
-    groupHtml('A revisar', '⚠️', worsened) +
-    groupHtml('Mejoras', '✅', improved);
+    groupHtml('A revisar', '⚠️', worsened, renderChangeRow) +
+    groupHtml('Persisten sin resolver', '⏳', persistent, renderPersistentRow) +
+    groupHtml('Mejoras', '✅', improved, renderChangeRow);
 }
 
 function renderSectorComparison(){

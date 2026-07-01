@@ -498,9 +498,11 @@
 .cal-scope .sector-row{display:flex; align-items:center; gap:14px; padding:9px 0; border-bottom:1px solid #F1F1F1; cursor:pointer;}
 .cal-scope .sector-row:last-child{border-bottom:none;}
 .cal-scope .sector-row:hover{opacity:.8;}
-.cal-scope .sector-row .name{font-size:13px; color:var(--gray-dark); width:130px; flex-shrink:0;}
-.cal-scope .sector-row .score-mini{font-size:13px; font-weight:700; width:30px; text-align:right; flex-shrink:0;}
-.cal-scope .sector-flag-count{display:inline-block; background:var(--amber); color:#fff; font-size:9px; font-weight:700; border-radius:10px; padding:1px 6px; margin-left:6px; vertical-align:middle;}
+.cal-scope .sector-row .name{font-size:13px; color:var(--gray-dark); width:165px; flex-shrink:0; display:flex; align-items:center; gap:6px; min-width:0;}
+.cal-scope .sector-row .name-text{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+.cal-scope .sector-row .score-mini{font-size:13px; font-weight:700; width:34px; text-align:right; flex-shrink:0;}
+.cal-scope .sector-row .bar-track{flex:1; width:auto; min-width:0;}
+.cal-scope .sector-flag-count{display:inline-block; background:var(--amber); color:#fff; font-size:9px; font-weight:700; border-radius:10px; padding:1px 6px; flex-shrink:0;}
 .cal-scope .sector-chevron{font-size:9px; color:var(--steel); flex-shrink:0; width:10px; text-align:center; margin-left:auto;}
 .cal-scope .action-box{margin-top:16px; border-radius:6px; padding:10px 14px; font-size:12px;}
 .cal-scope .action-box.red{background:var(--red-bg); color:var(--red);}
@@ -2162,7 +2164,7 @@ function renderDetail(d){
     const flagged = (d.itemsBySector[code] || []).filter(it => it.status !== "bueno");
     const countBadge = flagged.length ? `<span class="sector-flag-count">${flagged.length}</span>` : "";
     return `<div class="sector-row" onclick="openSectorModal('${code}')">
-      <span class="name">${sectorFullName(code)}${countBadge}</span>
+      <span class="name"><span class="name-text">${sectorFullName(code)}</span>${countBadge}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${val}%; background:${colorVar};"></div></div>
       <span class="score-mini" style="color:${colorVar};">${val}</span>
       <span class="sector-chevron">▾</span>

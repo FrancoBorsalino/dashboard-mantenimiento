@@ -491,30 +491,38 @@
 .cal-scope .bar-track{background:#ECEDED; border-radius:4px; height:6px; width:90px; overflow:hidden;}
 .cal-scope .bar-fill{height:100%; border-radius:4px;}
 
-.cal-scope .detail-grid{display:grid; grid-template-columns: 1.1fr 1fr; gap:20px;}
+.cal-scope .detail-grid{display:grid; grid-template-columns: 1.15fr 1fr; gap:20px; align-items:start;}
 .cal-scope .detail-card{background:var(--white); border-radius:10px; padding:22px; min-height:200px;}
 .cal-scope .detail-card .sede-name{font-size:18px; font-weight:700; color:var(--dark);}
 .cal-scope .detail-card .sede-meta{font-size:12px; color:var(--steel); margin-bottom:18px;}
-.cal-scope .sector-block:last-child .sector-row{border-bottom:none;}
-.cal-scope .sector-row{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid #F1F1F1; gap:10px; cursor:pointer;}
+.cal-scope .sector-row{display:flex; align-items:center; gap:14px; padding:9px 0; border-bottom:1px solid #F1F1F1; cursor:pointer;}
+.cal-scope .sector-row:last-child{border-bottom:none;}
 .cal-scope .sector-row:hover{opacity:.8;}
-.cal-scope .sector-row .name{font-size:13px; color:var(--gray-dark); width:140px; flex-shrink:0;}
-.cal-scope .sector-row .score-mini{font-size:13px; font-weight:700; width:36px; text-align:right;}
+.cal-scope .sector-row .name{font-size:13px; color:var(--gray-dark); width:130px; flex-shrink:0;}
+.cal-scope .sector-row .score-mini{font-size:13px; font-weight:700; width:30px; text-align:right; flex-shrink:0;}
 .cal-scope .sector-flag-count{display:inline-block; background:var(--amber); color:#fff; font-size:9px; font-weight:700; border-radius:10px; padding:1px 6px; margin-left:6px; vertical-align:middle;}
-.cal-scope .sector-chevron{font-size:9px; color:var(--steel); flex-shrink:0; width:10px; text-align:center;}
-.cal-scope .sector-items-panel{display:none; padding:2px 0 10px 4px;}
-.cal-scope .sector-items-panel.open{display:block;}
-.cal-scope .sector-item-row{display:flex; align-items:center; gap:8px; font-size:12px; padding:6px 10px; border-radius:6px; background:#FAFAFA; margin-bottom:4px;}
-.cal-scope .sector-item-dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
-.cal-scope .sector-item-dot.red{background:var(--red);}
-.cal-scope .sector-item-dot.amber{background:var(--amber);}
-.cal-scope .sector-item-name{flex:1; color:var(--dark);}
-.cal-scope .sector-item-ok{font-size:12px; color:var(--green); padding:6px 10px;}
+.cal-scope .sector-chevron{font-size:9px; color:var(--steel); flex-shrink:0; width:10px; text-align:center; margin-left:auto;}
 .cal-scope .action-box{margin-top:16px; border-radius:6px; padding:10px 14px; font-size:12px;}
 .cal-scope .action-box.red{background:var(--red-bg); color:var(--red);}
 .cal-scope .action-box.amber{background:var(--amber-bg); color:var(--amber);}
 .cal-scope .action-box.green{background:var(--green-bg); color:var(--green);}
 
+/* Popup con los ítems en regular/falla de un sector (reemplaza el desplegable inline) */
+.cal-scope .cal-modal-overlay{position:fixed; inset:0; background:rgba(20,20,20,.5); display:none; align-items:center; justify-content:center; z-index:9999; padding:20px;}
+.cal-scope .cal-modal-overlay.open{display:flex;}
+.cal-scope .cal-modal{background:var(--white); border-radius:10px; width:100%; max-width:420px; max-height:75vh; overflow-y:auto; padding:22px;}
+.cal-scope .cal-modal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+.cal-scope .cal-modal-title{font-size:14px; font-weight:700; color:var(--dark);}
+.cal-scope .sector-item-row{display:flex; align-items:center; gap:8px; font-size:12px; padding:8px 10px; border-radius:6px; background:#FAFAFA; margin-bottom:6px;}
+.cal-scope .sector-item-dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+.cal-scope .sector-item-dot.red{background:var(--red);}
+.cal-scope .sector-item-dot.amber{background:var(--amber);}
+.cal-scope .sector-item-name{flex:1; color:var(--dark);}
+.cal-scope .sector-item-ok{font-size:12px; color:var(--green); padding:6px 10px;}
+
+/* Mejoras y peoras — ahora al lado del detalle, no necesita ancho propio */
+.cal-scope .cal-changes-card{padding:22px; max-height:520px; overflow-y:auto;}
+.cal-scope .cal-changes-title{font-size:13px; font-weight:700; color:var(--dark); text-transform:uppercase; letter-spacing:.05em; margin-bottom:14px;}
 .cal-scope .cal-changes-meta{font-size:12px; color:var(--steel); margin-bottom:14px;}
 .cal-scope .cal-changes-group{margin-bottom:18px;}
 .cal-scope .cal-changes-group:last-child{margin-bottom:0;}
@@ -524,16 +532,21 @@
 .cal-scope .cal-change-item{flex:1; color:var(--dark);}
 .cal-scope .cal-change-transition{color:var(--steel); font-size:12px; white-space:nowrap;}
 
-.cal-scope .legend-card{background:var(--dark); border-radius:10px; padding:22px; color:var(--white);}
-.cal-scope .legend-card h3{font-size:14px; margin-bottom:14px; color:var(--white);}
-.cal-scope .legend-row{display:flex; align-items:flex-start; gap:10px; margin-bottom:14px;}
-.cal-scope .legend-dot{width:10px; height:10px; border-radius:50%; margin-top:4px; flex-shrink:0;}
-.cal-scope .legend-row .ltitle{font-size:13px; font-weight:700; color:var(--white);}
-.cal-scope .legend-row .ldesc{font-size:11.5px; color:var(--light); line-height:1.5; margin-top:2px;}
-.cal-scope .scoring-box{margin-top:18px; padding-top:18px; border-top:1px solid var(--gray-dark);}
-.cal-scope .scoring-box .stitle{font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--steel); margin-bottom:8px;}
-.cal-scope .scoring-box .srow{display:flex; justify-content:space-between; font-size:12px; color:var(--light); padding:4px 0;}
-.cal-scope .scoring-box .srow b{color:var(--white);}
+/* Lógica de puntaje — ahora abajo a la izquierda y más chica */
+.cal-scope .legend-card-wrap{margin-top:20px; max-width:380px;}
+.cal-scope .legend-card{background:var(--dark); border-radius:10px; padding:16px 18px; color:var(--white);}
+.cal-scope .legend-card h3{font-size:12px; margin-bottom:10px; color:var(--white); text-transform:uppercase; letter-spacing:.05em;}
+.cal-scope .legend-row{display:flex; align-items:flex-start; gap:8px; margin-bottom:9px;}
+.cal-scope .legend-dot{width:8px; height:8px; border-radius:50%; margin-top:4px; flex-shrink:0;}
+.cal-scope .legend-row .ltitle{font-size:11.5px; font-weight:700; color:var(--white);}
+.cal-scope .legend-row .ldesc{font-size:10.5px; color:var(--light); line-height:1.4; margin-top:1px;}
+.cal-scope .scoring-box{margin-top:12px; padding-top:12px; border-top:1px solid var(--gray-dark);}
+.cal-scope .scoring-box .stitle{font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--steel); margin-bottom:6px;}
+.cal-scope .scoring-box .srow{display:flex; justify-content:space-between; font-size:11px; color:var(--light); padding:3px 0;}
+.cal-scope .scoring-box .srow b{color:var(--white); font-size:11px;}
+
+/* Comparación por sector — versión compacta con scroll interno */
+.cal-scope .cal-sector-comp-compact{padding:16px 20px; max-height:280px; overflow-y:auto;}
 
 .cal-scope #search-input{
   width:100%; max-width:280px; padding:9px 12px; border-radius:6px; border:1px solid var(--light);
@@ -1509,6 +1522,15 @@ if (document.readyState === 'loading') {
       <div class="loader">Seleccioná una sede del ranking para ver el detalle.</div>
     </div>
 
+    <div class="table-card cal-changes-card" id="cal-changes">
+      <div class="cal-changes-title">Mejoras y peoras vs. informe anterior</div>
+      <div id="cal-changes-body">
+        <div class="loader">Seleccioná una sede del ranking para ver la comparación.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-card-wrap">
     <div class="legend-card">
       <h3>Lógica de puntaje</h3>
       <div class="legend-row"><span class="legend-dot" style="background:var(--green);"></span>
@@ -1538,16 +1560,19 @@ if (document.readyState === 'loading') {
 </div>
 
 <div class="section">
-  <h2>Mejoras y peoras vs. informe anterior</h2>
-  <div class="table-card" style="padding:20px;" id="cal-changes">
-    <div class="loader">Seleccioná una sede del ranking para ver la comparación.</div>
+  <h2>Comparación por sector (todas las sedes)</h2>
+  <div class="table-card cal-sector-comp-compact" id="sector-comparison">
+    <div class="loader">Cargando comparación...</div>
   </div>
 </div>
 
-<div class="section">
-  <h2>Comparación por sector (todas las sedes)</h2>
-  <div class="table-card" style="padding:20px;" id="sector-comparison">
-    <div class="loader">Cargando comparación...</div>
+<div class="cal-modal-overlay" id="cal-sector-modal" onclick="if(event.target===this) closeSectorModal()">
+  <div class="cal-modal">
+    <div class="cal-modal-header">
+      <span class="cal-modal-title" id="cal-modal-title">Sector</span>
+      <button class="cal-detail-close" onclick="closeSectorModal()">Cerrar ✕</button>
+    </div>
+    <div id="cal-modal-body"></div>
   </div>
 </div>
 
@@ -2130,14 +2155,11 @@ function renderDetail(d){
     const colorVar = cls === "green" ? "var(--green)" : cls === "amber" ? "var(--amber)" : "var(--red)";
     const flagged = (d.itemsBySector[code] || []).filter(it => it.status !== "bueno");
     const countBadge = flagged.length ? `<span class="sector-flag-count">${flagged.length}</span>` : "";
-    return `<div class="sector-block">
-      <div class="sector-row" onclick="toggleSectorItems('${code}')">
-        <span class="name">${sectorFullName(code)}${countBadge}</span>
-        <div class="bar-track"><div class="bar-fill" style="width:${val}%; background:${colorVar};"></div></div>
-        <span class="score-mini" style="color:${colorVar};">${val}</span>
-        <span class="sector-chevron">▾</span>
-      </div>
-      <div class="sector-items-panel" id="sector-items-${code}"></div>
+    return `<div class="sector-row" onclick="openSectorModal('${code}')">
+      <span class="name">${sectorFullName(code)}${countBadge}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${val}%; background:${colorVar};"></div></div>
+      <span class="score-mini" style="color:${colorVar};">${val}</span>
+      <span class="sector-chevron">▾</span>
     </div>`;
   }).join("");
 
@@ -2168,20 +2190,19 @@ function renderDetail(d){
   renderChanges(d);
 }
 
-// Despliega, dentro del detalle de sede, los ítems en "regular" o "falla" de un sector puntual.
-// Los ítems en "bueno" no se muestran (no aportan nada a revisar).
-function toggleSectorItems(code){
-  const panel = document.getElementById('sector-items-' + code);
-  if (!panel || !currentDetailEntry) return;
-  const isOpen = panel.classList.contains('open');
-  document.querySelectorAll('.sector-items-panel.open').forEach(p => p.classList.remove('open'));
-  if (isOpen) return;
+// Popup con los ítems en "regular" o "falla" de un sector puntual (los "bueno" no se muestran).
+function openSectorModal(code){
+  if (!currentDetailEntry) return;
+  const overlay = document.getElementById('cal-sector-modal');
+  const title = document.getElementById('cal-modal-title');
+  const body = document.getElementById('cal-modal-body');
+  title.textContent = sectorFullName(code) + ' — ' + currentDetailEntry.sede;
 
   const items = (currentDetailEntry.itemsBySector[code] || []).filter(it => it.status !== 'bueno');
   if (!items.length) {
-    panel.innerHTML = '<div class="sector-item-ok">✓ Todos los ítems de este sector están en buen estado.</div>';
+    body.innerHTML = '<div class="sector-item-ok">✓ Todos los ítems de este sector están en buen estado.</div>';
   } else {
-    panel.innerHTML = items.map(it => {
+    body.innerHTML = items.map(it => {
       const cls = it.status === 'falla' ? 'red' : 'amber';
       const label = it.status === 'falla' ? 'Falla' : 'Regular';
       return `<div class="sector-item-row">
@@ -2191,14 +2212,20 @@ function toggleSectorItems(code){
       </div>`;
     }).join('');
   }
-  panel.classList.add('open');
+  overlay.classList.add('open');
 }
-window.toggleSectorItems = toggleSectorItems;
+window.openSectorModal = openSectorModal;
+
+function closeSectorModal(){
+  const overlay = document.getElementById('cal-sector-modal');
+  if (overlay) overlay.classList.remove('open');
+}
+window.closeSectorModal = closeSectorModal;
 
 // Compara el informe actual contra el inmediatamente anterior de la MISMA sede
 // (usando el historial completo, sin importar el filtro de mes/sede activo).
 function renderChanges(d){
-  const el = document.getElementById('cal-changes');
+  const el = document.getElementById('cal-changes-body');
   if (!el) return;
 
   const previous = getPreviousEntry(d);
@@ -2249,7 +2276,7 @@ function renderSectorComparison(){
     const avg = Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
     const cls = avg >= 75 ? "green" : avg >= 60 ? "amber" : "red";
     const colorVar = cls === "green" ? "var(--green)" : cls === "amber" ? "var(--amber)" : "var(--red)";
-    return `<div class="sector-row">
+    return `<div class="sector-row" style="cursor:default;">
       <span class="name" style="width:160px;">${sectorFullName(code)}</span>
       <div class="bar-track" style="width:70%;"><div class="bar-fill" style="width:${avg}%; background:${colorVar};"></div></div>
       <span class="score-mini" style="color:${colorVar};">${avg}</span>
@@ -2267,6 +2294,10 @@ document.querySelectorAll('.table-card thead th[data-sort]').forEach(th => {
   th.addEventListener('click', () => sortSedes(th.getAttribute('data-sort')));
 });
 updateSortHeaders();
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeSectorModal();
+});
 
 loadData();
 })();

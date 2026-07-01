@@ -352,6 +352,15 @@
     display: flex; align-items: center; gap: .5rem;
   }
   footer span { color: var(--orange); font-weight: 700; }
+  footer .footer-form-link{
+    margin-left: auto;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent; border: 1px solid var(--orange); color: var(--orange);
+    font-family: var(--font); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    padding: .4rem .8rem; border-radius: 4px; text-decoration: none;
+    transition: background .15s, color .15s;
+  }
+  footer .footer-form-link:hover{ background: var(--orange); color: #fff; }
 
   @media (max-width: 720px) {
     header, .sync-bar, main { padding-left: 1rem; padding-right: 1rem; }
@@ -555,7 +564,16 @@
   font-family:'Roboto'; font-size:13px; margin-bottom:14px;
 }
 
-.cal-scope footer{margin-top:8px; font-size:11px; color:var(--steel); text-align:center;}
+.cal-scope footer{margin-top:8px; font-size:11px; color:var(--steel); display:flex; align-items:center; justify-content:space-between; gap:12px;}
+.cal-scope footer .cal-footer-form-link{
+  flex-shrink:0;
+  display:inline-flex; align-items:center; gap:6px;
+  background:transparent; border:1px solid var(--orange); color:var(--orange);
+  font-family:'Roboto', sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+  padding:.4rem .8rem; border-radius:4px; text-decoration:none;
+  transition:background .15s, color .15s;
+}
+.cal-scope footer .cal-footer-form-link:hover{ background:var(--orange); color:#fff; }
 .cal-scope .loader{font-size:13px; color:var(--steel); padding:20px; text-align:center;}
 
 </style>
@@ -722,6 +740,7 @@
 
 <footer>
   <span>CORE</span> · Mantenimiento de Sedes · datos en tiempo real desde Google Sheets
+  <a class="footer-form-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfU6sbZiJ0CGXXQeTLgsLKK738gE6ulNj3iNCbYN_PIvjvSng/viewform?pli=1&pli=1" target="_blank" rel="noopener">↗ Enlace a Form</a>
 </footer>
 
 <script>
@@ -1584,7 +1603,10 @@ if (document.readyState === 'loading') {
   </div>
 </div>
 
-<footer>CORE &middot; Dashboard de Calificación de Sedes &middot; Datos en vivo desde Google Sheets</footer>
+<footer>
+  <span>CORE &middot; Dashboard de Calificación de Sedes &middot; Datos en vivo desde Google Sheets</span>
+  <a class="cal-footer-form-link" href="https://docs.google.com/forms/d/e/1FAIpQLSdLlwWK-dulXm5grAWjPG6sowD0LuwmwHmbzqNVsqLZo6hl4w/viewform" target="_blank" rel="noopener">↗ Enlace a Form</a>
+</footer>
 </div>
 </div>
 

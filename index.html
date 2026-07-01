@@ -459,6 +459,8 @@
 .cal-scope .cal-card .cal-card-sede{ font-size:14px; font-weight:700; color:var(--dark); margin-bottom:8px; }
 .cal-scope .cal-card .cal-card-row{ font-size:12px; color:var(--gray-dark); margin-top:5px; }
 .cal-scope .cal-card .cal-card-row b{ color:var(--dark); }
+.cal-scope .cal-card-missing{ background:#FAFAFA; border:1px dashed #D8D8D8; }
+.cal-scope .cal-card-missing .cal-card-sede{ color:var(--gray-dark); }
 
 .cal-scope .section{margin-bottom:32px;}
 .cal-scope .section h2{font-size:16px; color:var(--dark); margin-bottom:14px; display:flex; align-items:center; gap:8px;}
@@ -476,7 +478,8 @@
 .cal-scope tbody tr:last-child{border-bottom:none;}
 .cal-scope tbody td{padding:11px 14px; vertical-align:middle;}
 .cal-scope tbody tr:hover{background:#FAFAFA;}
-.cal-scope .rank-num{font-weight:700; color:var(--steel); width:24px; display:inline-block;}
+.cal-scope .rank-num{font-weight:700; color:var(--steel); width:28px; display:inline-block; font-size:12px;}
+.cal-scope .cal-date-cell{font-size:11px; color:var(--steel); white-space:nowrap;}
 .cal-scope .score-pill{display:inline-block; min-width:46px; text-align:center; padding:4px 10px; border-radius:20px; font-weight:700; font-size:13px;}
 .cal-scope .score-pill.green{background:var(--green-bg); color:var(--green);}
 .cal-scope .score-pill.amber{background:var(--amber-bg); color:var(--amber);}
@@ -1367,6 +1370,48 @@ if (document.readyState === 'loading') {
   <button class="cal-btn-sync" id="btn-cal-sync" onclick="refreshCalificacion()">↻ Actualizar datos</button>
   <div id="status-bar">Conectando con Google Sheets...</div>
   <div class="cal-filter-group">
+    <span class="cal-filter-label">Sede</span>
+    <select id="sede-filter" onchange="onSedeFilterChange()">
+      <option value="">Todas las sedes</option>
+      <option value="1">01 · Recoleta</option>
+      <option value="2">02 · Cañitas II</option>
+      <option value="3">03 · Palermo Soho</option>
+      <option value="4">04 · Barrio Norte</option>
+      <option value="5">05 · Gutierrez</option>
+      <option value="6">06 · Cabildo</option>
+      <option value="7">07 · Caballito</option>
+      <option value="8">08 · Santa Fe</option>
+      <option value="9">09 · Almagro</option>
+      <option value="10">10 · Urquiza</option>
+      <option value="11">11 · Scalabrini</option>
+      <option value="12">12 · Juncal</option>
+      <option value="13">13 · Colegiales</option>
+      <option value="14">14 · Carranza</option>
+      <option value="15">15 · Holmberg</option>
+      <option value="16">16 · Vicente Lopez</option>
+      <option value="17">17 · Arcos</option>
+      <option value="18">18 · Palermo Chico</option>
+      <option value="19">19 · Olivos</option>
+      <option value="20">20 · Saavedra</option>
+      <option value="21">21 · Pilar</option>
+      <option value="22">22 · Quilmes</option>
+      <option value="23">23 · P. Centenario</option>
+      <option value="24">24 · Triunvirato</option>
+      <option value="25">25 · Directorio</option>
+      <option value="26">26 · Mansilla</option>
+      <option value="27">27 · Coghlan</option>
+      <option value="28">28 · V.D. Parque</option>
+      <option value="29">29 · Carlos Calvo</option>
+      <option value="30">30 · Nuñez</option>
+      <option value="31">31 · Esmeralda</option>
+      <option value="32">32 · Devoto</option>
+      <option value="33">33 · Martinez</option>
+      <option value="E1">E1 · Alcalá</option>
+      <option value="E2">E2 · Malasaña</option>
+      <option value="UY">UY · Pocitos</option>
+    </select>
+  </div>
+  <div class="cal-filter-group">
     <span class="cal-filter-label">Período</span>
     <select id="month-filter" onchange="onMonthFilterChange()">
       <option value="">Todos</option>
@@ -1376,7 +1421,7 @@ if (document.readyState === 'loading') {
 </div>
 
 <div class="kpis">
-  <div class="kpi"><div class="label">Sedes evaluadas</div><div class="value" id="kpi-sedes">&ndash;</div><div class="sub" id="kpi-sedes-sub">con notificación registrada</div></div>
+  <div class="kpi" id="kpi-sedes-box"><div class="label">Sedes evaluadas</div><div class="value" id="kpi-sedes">&ndash;</div><div class="sub" id="kpi-sedes-sub">con notificación registrada</div></div>
   <div class="kpi green"><div class="label">Promedio general</div><div class="value" id="kpi-promedio">&ndash;</div><div class="sub">sobre 100 puntos</div></div>
   <div class="kpi amber" id="kpi-atencion-box" onclick="toggleCalDetail('atencion')" style="cursor:pointer">
     <div class="label">En atención <span style="opacity:.5">▾</span></div>
@@ -1388,6 +1433,14 @@ if (document.readyState === 'loading') {
     <div class="value" id="kpi-criticas">&ndash;</div>
     <div class="sub">intervención urgente</div>
   </div>
+</div>
+
+<div class="cal-detail-section" id="cal-detail-noeval">
+  <div class="cal-detail-header">
+    <span class="cal-detail-title">Sedes sin evaluar aún</span>
+    <button class="cal-detail-close" onclick="toggleCalDetail('noeval')">Cerrar ✕</button>
+  </div>
+  <div class="cal-cards-wrap" id="cal-detail-noeval-cards"></div>
 </div>
 
 <div class="cal-detail-section" id="cal-detail-atencion">
@@ -1407,22 +1460,23 @@ if (document.readyState === 'loading') {
 </div>
 
 <div class="section">
-  <h2>Ranking de sedes</h2>
+  <h2 id="ranking-title">Ranking de sedes</h2>
   <input type="text" id="search-input" placeholder="Buscar sede...">
   <div class="table-card">
     <table>
       <thead>
         <tr>
-          <th>#</th>
+          <th title="Número de sede">Nº</th>
           <th data-sort="sede">Sede</th>
           <th data-sort="score">Puntaje</th>
           <th data-sort="tendencia">Tendencia</th>
           <th data-sort="weakest">Sector más débil</th>
           <th data-sort="clasificacion">Clasificación</th>
+          <th data-sort="fecha">Fecha</th>
         </tr>
       </thead>
       <tbody id="ranking-body">
-        <tr><td colspan="6" class="loader">Cargando ranking...</td></tr>
+        <tr><td colspan="7" class="loader">Cargando ranking...</td></tr>
       </tbody>
     </table>
   </div>
@@ -1501,6 +1555,74 @@ const TOTAL_SEDES_CORE = 36;
 
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
+// Listado canónico de sedes con su número oficial. El nombre que carga el supervisor en el
+// formulario puede variar levemente (con o sin acentos, abreviado, etc.) — por eso cada sede
+// tiene "aliases" con las variantes más comunes para poder matchearla igual.
+// Si se abre una sede nueva o cambia de nombre en el form: agregarla acá.
+const SEDE_LIST = [
+  { code:'1',  name:'Recoleta',        aliases:['recoleta'] },
+  { code:'2',  name:'Cañitas II',      aliases:['canitas','cañitas','cañitas ii','canitas ii'] },
+  { code:'3',  name:'Palermo Soho',    aliases:['palermo soho'] },
+  { code:'4',  name:'Barrio Norte',    aliases:['barrio norte'] },
+  { code:'5',  name:'Gutierrez',       aliases:['gutierrez','gutiérrez'] },
+  { code:'6',  name:'Cabildo',         aliases:['cabildo'] },
+  { code:'7',  name:'Caballito',       aliases:['caballito'] },
+  { code:'8',  name:'Santa Fe',        aliases:['santa fe'] },
+  { code:'9',  name:'Almagro',         aliases:['almagro'] },
+  { code:'10', name:'Urquiza',         aliases:['urquiza'] },
+  { code:'11', name:'Scalabrini',      aliases:['scalabrini'] },
+  { code:'12', name:'Juncal',          aliases:['juncal'] },
+  { code:'13', name:'Colegiales',      aliases:['colegiales'] },
+  { code:'14', name:'Carranza',        aliases:['carranza'] },
+  { code:'15', name:'Holmberg',        aliases:['holmberg'] },
+  { code:'16', name:'Vicente Lopez',   aliases:['vicente lopez','vicente lópez'] },
+  { code:'17', name:'Arcos',           aliases:['arcos'] },
+  { code:'18', name:'Palermo Chico',   aliases:['palermo chico'] },
+  { code:'19', name:'Olivos',          aliases:['olivos'] },
+  { code:'20', name:'Saavedra',        aliases:['saavedra'] },
+  { code:'21', name:'Pilar',           aliases:['pilar'] },
+  { code:'22', name:'Quilmes',         aliases:['quilmes'] },
+  { code:'23', name:'P. Centenario',   aliases:['p centenario','parque centenario','p. centenario'] },
+  { code:'24', name:'Triunvirato',     aliases:['triunvirato'] },
+  { code:'25', name:'Directorio',      aliases:['directorio'] },
+  { code:'26', name:'Mansilla',        aliases:['mansilla'] },
+  { code:'27', name:'Coghlan',         aliases:['coghlan'] },
+  { code:'28', name:'V.D. Parque',     aliases:['v d parque','v.d. parque','vd parque','villa del parque'] },
+  { code:'29', name:'Carlos Calvo',    aliases:['carlos calvo'] },
+  { code:'30', name:'Nuñez',           aliases:['nuñez','nunez'] },
+  { code:'31', name:'Esmeralda',       aliases:['esmeralda'] },
+  { code:'32', name:'Devoto',          aliases:['devoto'] },
+  { code:'33', name:'Martinez',        aliases:['martinez','martínez'] },
+  { code:'E1', name:'Alcalá',          aliases:['alcala','alcalá','alcala es','alcalá es'] },
+  { code:'E2', name:'Malasaña',        aliases:['malasana','malasaña','malasaña es'] },
+  { code:'UY', name:'Pocitos',         aliases:['pocitos','pocitos uy'] }
+];
+
+function normalizeSimple(str){
+  return (str || '').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+const SEDE_LOOKUP = (() => {
+  const map = {};
+  SEDE_LIST.forEach(s => {
+    map[normalizeSimple(s.name)] = s;
+    s.aliases.forEach(a => { map[normalizeSimple(a)] = s; });
+  });
+  return map;
+})();
+
+// Devuelve { code, name } de la sede canónica que mejor matchea el texto crudo del form.
+// Si no encuentra match exacto, intenta match parcial (por si el form tiene texto extra).
+function getSedeInfo(rawName){
+  const norm = normalizeSimple(rawName);
+  if (SEDE_LOOKUP[norm]) return SEDE_LOOKUP[norm];
+  const partial = Object.keys(SEDE_LOOKUP).find(key => norm.includes(key) || key.includes(norm));
+  if (partial) return SEDE_LOOKUP[partial];
+  return { code: null, name: rawName };
+}
+
 let sedesData = [];
 let sectorOrder = [];
 let currentSort = { key: 'score', dir: 'desc' };
@@ -1512,7 +1634,8 @@ const SORT_ACCESSORS = {
   score: d => d.score,
   tendencia: d => d.score,
   clasificacion: d => d.score,
-  weakest: d => d.weakest ? sectorFullName(d.weakest).toLowerCase() : ''
+  weakest: d => d.weakest ? sectorFullName(d.weakest).toLowerCase() : '',
+  fecha: d => parseTimestamp(d.timestamp)
 };
 
 function applySort(){
@@ -1572,6 +1695,19 @@ function monthKeyFromStr(str){
 function monthLabel(mk){
   const [y, mo] = mk.split('-');
   return MESES[+mo - 1] + ' ' + y;
+}
+
+// Formato compacto "DD/MM HH:mm" para no ocupar espacio en la tabla general.
+// El string completo queda disponible como tooltip (title) en la celda.
+function formatShortDate(str){
+  const ts = parseTimestamp(str);
+  if (!ts) return '&ndash;';
+  const d = new Date(ts);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return dd + '/' + mm + ' ' + hh + ':' + mi;
 }
 
 // Puebla el <select> de período con los meses presentes en los datos, más recientes primero.
@@ -1646,10 +1782,68 @@ function onMonthFilterChange(){
 }
 window.onMonthFilterChange = onMonthFilterChange;
 
+// Al elegir una sede puntual pasamos a "modo historial": tiene más sentido
+// ver primero la carga más reciente. Al volver a "Todas las sedes" restauramos
+// el orden por puntaje.
+function onSedeFilterChange(){
+  const sedeVal = document.getElementById('sede-filter').value;
+  currentSort = sedeVal ? { key: 'fecha', dir: 'desc' } : { key: 'score', dir: 'desc' };
+  updateSortHeaders();
+  if (rawRows.length) processData(rawRows, rawFields);
+}
+window.onSedeFilterChange = onSedeFilterChange;
+
 function setStatus(msg, cls){
   const el = document.getElementById("status-bar");
   el.innerHTML = msg;
   el.className = cls || "";
+}
+
+// Arma el objeto "entry" (puntaje, sectores, sector más débil, etc.) a partir de una fila cruda.
+// Reutilizada tanto para el ranking general (última carga por sede) como para el historial
+// completo de una sede puntual.
+function buildEntry(row, sedeCol, tsCol, supCol, obsCol, fotoCol, sectorCols, sectorOrder){
+  const sedeRaw = (row[sedeCol] || "").trim();
+  let total = 0, count = 0;
+  const sectorScores = {};
+  sectorOrder.forEach(code => { sectorScores[code] = {total:0, count:0}; });
+
+  sectorCols.forEach(col => {
+    const val = normalize(row[col]);
+    if(EXCLUDE_VALUES.includes(val)) return;
+    const score = SCORE_MAP[val];
+    if(score === undefined) return;
+    const code = sectorCodeFromHeader(col);
+    total += score; count++;
+    sectorScores[code].total += score; sectorScores[code].count++;
+  });
+
+  const finalScore = count > 0 ? Math.round(total / count) : null;
+  const sectorAvgs = {};
+  sectorOrder.forEach(code => {
+    const s = sectorScores[code];
+    sectorAvgs[code] = s.count > 0 ? Math.round(s.total / s.count) : null;
+  });
+
+  let weakest = null;
+  sectorOrder.forEach(code => {
+    if(sectorAvgs[code] !== null && (weakest === null || sectorAvgs[code] < sectorAvgs[weakest])){
+      weakest = code;
+    }
+  });
+
+  const info = getSedeInfo(sedeRaw);
+  return {
+    sede: sedeRaw,
+    code: info.code,
+    supervisor: row[supCol] || "",
+    timestamp: row[tsCol] || "",
+    score: finalScore,
+    sectorAvgs,
+    weakest,
+    observaciones: obsCol ? row[obsCol] : "",
+    foto: fotoCol ? row[fotoCol] : ""
+  };
 }
 
 function processData(rows, fields){
@@ -1664,61 +1858,37 @@ function processData(rows, fields){
 
   populateMonthFilter(rows, tsCol);
   const monthVal = document.getElementById('month-filter').value;
+  const sedeVal = document.getElementById('sede-filter').value;
   const periodRows = monthVal ? rows.filter(r => monthKeyFromStr(r[tsCol]) === monthVal) : rows;
 
-  const bySede = {};
-  const bySedeTs = {};
-  periodRows.forEach(row => {
-    const sede = (row[sedeCol] || "").trim();
-    if(!sede) return;
-    const ts = parseTimestamp(row[tsCol]);
-    if(!(sede in bySedeTs) || ts >= bySedeTs[sede]){
-      bySedeTs[sede] = ts;
-      bySede[sede] = row;
-    }
-  });
+  const titleEl = document.getElementById('ranking-title');
 
-  sedesData = Object.keys(bySede).map(sede => {
-    const row = bySede[sede];
-    let total = 0, count = 0;
-    const sectorScores = {};
-    sectorOrder.forEach(code => { sectorScores[code] = {total:0, count:0}; });
-
-    sectorCols.forEach(col => {
-      const val = normalize(row[col]);
-      if(EXCLUDE_VALUES.includes(val)) return;
-      const score = SCORE_MAP[val];
-      if(score === undefined) return;
-      const code = sectorCodeFromHeader(col);
-      total += score; count++;
-      sectorScores[code].total += score; sectorScores[code].count++;
-    });
-
-    const finalScore = count > 0 ? Math.round(total / count) : null;
-    const sectorAvgs = {};
-    sectorOrder.forEach(code => {
-      const s = sectorScores[code];
-      sectorAvgs[code] = s.count > 0 ? Math.round(s.total / s.count) : null;
-    });
-
-    let weakest = null;
-    sectorOrder.forEach(code => {
-      if(sectorAvgs[code] !== null && (weakest === null || sectorAvgs[code] < sectorAvgs[weakest])){
-        weakest = code;
+  if (sedeVal) {
+    // Modo historial: TODAS las cargas de esa sede (no solo la última), ordenables por fecha.
+    sedesData = periodRows
+      .filter(row => getSedeInfo(row[sedeCol]).code === sedeVal)
+      .map(row => buildEntry(row, sedeCol, tsCol, supCol, obsCol, fotoCol, sectorCols, sectorOrder))
+      .filter(d => d.score !== null);
+    const sedeInfo = SEDE_LIST.find(s => s.code === sedeVal);
+    if (titleEl) titleEl.textContent = 'Historial de ' + (sedeInfo ? sedeInfo.name : sedeVal);
+  } else {
+    // Modo general: la carga más reciente de cada sede.
+    const bySede = {};
+    const bySedeTs = {};
+    periodRows.forEach(row => {
+      const sede = (row[sedeCol] || "").trim();
+      if(!sede) return;
+      const ts = parseTimestamp(row[tsCol]);
+      if(!(sede in bySedeTs) || ts >= bySedeTs[sede]){
+        bySedeTs[sede] = ts;
+        bySede[sede] = row;
       }
     });
-
-    return {
-      sede,
-      supervisor: row[supCol] || "",
-      timestamp: row[tsCol] || "",
-      score: finalScore,
-      sectorAvgs,
-      weakest,
-      observaciones: obsCol ? row[obsCol] : "",
-      foto: fotoCol ? row[fotoCol] : ""
-    };
-  }).filter(d => d.score !== null);
+    sedesData = Object.keys(bySede)
+      .map(sede => buildEntry(bySede[sede], sedeCol, tsCol, supCol, obsCol, fotoCol, sectorCols, sectorOrder))
+      .filter(d => d.score !== null);
+    if (titleEl) titleEl.textContent = 'Ranking de sedes';
+  }
 
   applySort();
   updateSortHeaders();
@@ -1732,20 +1902,35 @@ function processData(rows, fields){
 }
 
 function renderKPIs(){
+  const sedeVal = document.getElementById('sede-filter').value;
+  const monthVal = document.getElementById('month-filter').value;
+  const box = document.getElementById('kpi-sedes-box');
+  const sub = document.getElementById('kpi-sedes-sub');
   const total = sedesData.length;
   const avg = total ? Math.round(sedesData.reduce((a,d) => a+d.score,0) / total) : 0;
   const atencion = sedesData.filter(d => d.score >= 60 && d.score < 75).length;
   const criticas = sedesData.filter(d => d.score < 60).length;
-  document.getElementById("kpi-sedes").textContent = total + " / " + TOTAL_SEDES_CORE;
+
   document.getElementById("kpi-promedio").textContent = avg;
   document.getElementById("kpi-atencion").textContent = atencion;
   document.getElementById("kpi-criticas").textContent = criticas;
 
-  const monthVal = document.getElementById('month-filter').value;
-  const sub = document.getElementById('kpi-sedes-sub');
-  sub.textContent = monthVal
-    ? 'evaluadas en ' + monthLabel(monthVal).toLowerCase()
-    : 'sobre el total de la red CORE';
+  if (sedeVal) {
+    // Modo historial de una sede: el primer KPI pasa a contar cargas, no sedes.
+    box.querySelector('.label').textContent = 'Cargas registradas';
+    document.getElementById("kpi-sedes").textContent = total;
+    sub.textContent = 'notificaciones' + (monthVal ? ' en ' + monthLabel(monthVal).toLowerCase() : ' de esta sede');
+    box.style.cursor = 'default';
+    box.onclick = null;
+  } else {
+    box.querySelector('.label').textContent = 'Sedes evaluadas';
+    document.getElementById("kpi-sedes").textContent = total + " / " + TOTAL_SEDES_CORE;
+    sub.textContent = monthVal
+      ? 'evaluadas en ' + monthLabel(monthVal).toLowerCase()
+      : 'sobre el total de la red CORE';
+    box.style.cursor = 'pointer';
+    box.onclick = () => toggleCalDetail('noeval');
+  }
 }
 
 function calDetailData(which){
@@ -1758,10 +1943,14 @@ function toggleCalDetail(which){
   const el = document.getElementById('cal-detail-' + which);
   if (!el) return;
   const isOpen = el.classList.contains('open');
-  ['atencion','criticas'].forEach(w => document.getElementById('cal-detail-' + w).classList.remove('open'));
+  ['atencion','criticas','noeval'].forEach(w => document.getElementById('cal-detail-' + w).classList.remove('open'));
   if (!isOpen) {
     el.classList.add('open');
-    renderCalDetailCards(which, calDetailData(which));
+    if (which === 'noeval') {
+      renderNoEvalCards();
+    } else {
+      renderCalDetailCards(which, calDetailData(which));
+    }
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 }
@@ -1774,6 +1963,8 @@ function refreshOpenCalDetails(){
       renderCalDetailCards(which, calDetailData(which));
     }
   });
+  const noevalEl = document.getElementById('cal-detail-noeval');
+  if (noevalEl && noevalEl.classList.contains('open')) renderNoEvalCards();
 }
 
 function renderCalDetailCards(which, data){
@@ -1787,7 +1978,7 @@ function renderCalDetailCards(which, data){
     const c = classify(d.score);
     const weakestLabel = d.weakest ? sectorFullName(d.weakest) + " (" + d.sectorAvgs[d.weakest] + ")" : "&ndash;";
     return `<div class="cal-card">
-      <div class="cal-card-sede">${d.sede}</div>
+      <div class="cal-card-sede">${d.code ? d.code + ' · ' : ''}${d.sede}</div>
       <span class="score-pill ${c.cls}">${d.score}</span>
       <div class="cal-card-row"><b>Sector más débil:</b> ${weakestLabel}</div>
       <div class="cal-card-row"><b>Supervisor:</b> ${d.supervisor || "&ndash;"}</div>
@@ -1796,30 +1987,46 @@ function renderCalDetailCards(which, data){
   }).join('');
 }
 
+// Cruza el listado canónico de 36 sedes contra las que sí tienen carga en el período actual.
+function renderNoEvalCards(){
+  const wrap = document.getElementById('cal-detail-noeval-cards');
+  if (!wrap) return;
+  const matchedCodes = new Set(sedesData.map(d => d.code).filter(Boolean));
+  const missing = SEDE_LIST.filter(s => !matchedCodes.has(s.code));
+  if (!missing.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--steel)">Todas las sedes de la red tienen al menos una evaluación registrada en este período.</p>';
+    return;
+  }
+  wrap.innerHTML = missing.map(s => `<div class="cal-card cal-card-missing">
+      <div class="cal-card-sede">${s.code} · ${s.name}</div>
+      <div class="cal-card-row">Sin notificación registrada en este período.</div>
+    </div>`).join('');
+}
+
 function renderRanking(data){
   const body = document.getElementById("ranking-body");
   if(!data.length){
-    body.innerHTML = '<tr><td colspan="6" class="loader">No hay sedes para mostrar.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="loader">No hay sedes para mostrar.</td></tr>';
     return;
   }
-  body.innerHTML = data.map((d,i) => {
+  body.innerHTML = data.map((d, i) => {
     const c = classify(d.score);
     const weakestLabel = d.weakest ? sectorFullName(d.weakest) + " (" + d.sectorAvgs[d.weakest] + ")" : "&ndash;";
-    return `<tr data-sede="${encodeURIComponent(d.sede)}">
-      <td><span class="rank-num">${i+1}</span></td>
+    return `<tr data-idx="${i}">
+      <td><span class="rank-num">${d.code || "&ndash;"}</span></td>
       <td><b>${d.sede}</b></td>
       <td><span class="score-pill ${c.cls}">${d.score}</span></td>
       <td><div class="bar-track"><div class="bar-fill" style="width:${d.score}%; background:var(--${c.cls === 'green' ? 'green' : c.cls === 'amber' ? 'amber' : 'red'});"></div></div></td>
       <td>${weakestLabel}</td>
       <td><span class="tag ${c.cls}">${c.label}</span></td>
+      <td class="cal-date-cell" title="${d.timestamp || ''}">${formatShortDate(d.timestamp)}</td>
     </tr>`;
   }).join("");
 
-  body.querySelectorAll("tr[data-sede]").forEach(tr => {
+  body.querySelectorAll("tr[data-idx]").forEach(tr => {
     tr.addEventListener("click", () => {
-      const sede = decodeURIComponent(tr.getAttribute("data-sede"));
-      const d = sedesData.find(x => x.sede === sede);
-      if(d) renderDetail(d);
+      const idx = +tr.getAttribute("data-idx");
+      if (data[idx]) renderDetail(data[idx]);
     });
   });
 }

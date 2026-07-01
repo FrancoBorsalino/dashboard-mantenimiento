@@ -492,7 +492,7 @@
 .cal-scope .bar-fill{height:100%; border-radius:4px;}
 
 .cal-scope .detail-grid{display:grid; grid-template-columns: 1.15fr 1fr; gap:20px; align-items:start;}
-.cal-scope .detail-card{background:var(--white); border-radius:10px; padding:22px; min-height:200px;}
+.cal-scope .detail-card{background:var(--white); border-radius:10px; padding:22px; height:460px; overflow-y:auto;}
 .cal-scope .detail-card .sede-name{font-size:18px; font-weight:700; color:var(--dark);}
 .cal-scope .detail-card .sede-meta{font-size:12px; color:var(--steel); margin-bottom:18px;}
 .cal-scope .sector-row{display:flex; align-items:center; gap:14px; padding:9px 0; border-bottom:1px solid #F1F1F1; cursor:pointer;}
@@ -521,8 +521,7 @@
 .cal-scope .sector-item-ok{font-size:12px; color:var(--green); padding:6px 10px;}
 
 /* Mejoras y peoras — ahora al lado del detalle, no necesita ancho propio */
-.cal-scope .cal-changes-card{padding:22px; max-height:520px; overflow-y:auto;}
-.cal-scope .cal-changes-title{font-size:13px; font-weight:700; color:var(--dark); text-transform:uppercase; letter-spacing:.05em; margin-bottom:14px;}
+.cal-scope .cal-changes-card{padding:22px; height:460px; overflow-y:auto;}
 .cal-scope .cal-changes-meta{font-size:12px; color:var(--steel); margin-bottom:14px;}
 .cal-scope .cal-changes-group{margin-bottom:18px;}
 .cal-scope .cal-changes-group:last-child{margin-bottom:0;}
@@ -533,7 +532,8 @@
 .cal-scope .cal-change-transition{color:var(--steel); font-size:12px; white-space:nowrap;}
 
 /* Lógica de puntaje — ahora abajo a la izquierda y más chica */
-.cal-scope .legend-card-wrap{margin-top:20px; max-width:380px;}
+.cal-scope .cal-legend-sector-grid{display:grid; grid-template-columns: 380px 1fr; gap:20px; align-items:start; margin-top:20px;}
+.cal-scope .legend-card-wrap{max-width:380px;}
 .cal-scope .legend-card{background:var(--dark); border-radius:10px; padding:16px 18px; color:var(--white);}
 .cal-scope .legend-card h3{font-size:12px; margin-bottom:10px; color:var(--white); text-transform:uppercase; letter-spacing:.05em;}
 .cal-scope .legend-row{display:flex; align-items:flex-start; gap:8px; margin-bottom:9px;}
@@ -1516,53 +1516,59 @@ if (document.readyState === 'loading') {
 </div>
 
 <div class="section">
-  <h2>Vista de detalle por sede</h2>
   <div class="detail-grid">
-    <div class="detail-card" id="detail-card">
-      <div class="loader">Seleccioná una sede del ranking para ver el detalle.</div>
+    <div>
+      <h2>Vista de detalle por sede</h2>
+      <div class="detail-card" id="detail-card">
+        <div class="loader">Seleccioná una sede del ranking para ver el detalle.</div>
+      </div>
     </div>
 
-    <div class="table-card cal-changes-card" id="cal-changes">
-      <div class="cal-changes-title">Mejoras y peoras vs. informe anterior</div>
-      <div id="cal-changes-body">
-        <div class="loader">Seleccioná una sede del ranking para ver la comparación.</div>
+    <div>
+      <h2>Comparativa informe previo</h2>
+      <div class="table-card cal-changes-card" id="cal-changes">
+        <div id="cal-changes-body">
+          <div class="loader">Seleccioná una sede del ranking para ver la comparación.</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="legend-card-wrap">
-    <div class="legend-card">
-      <h3>Lógica de puntaje</h3>
-      <div class="legend-row"><span class="legend-dot" style="background:var(--green);"></span>
-        <div><div class="ltitle">Bueno &rarr; 100 pts</div><div class="ldesc">El ítem cumple sin observaciones.</div></div></div>
-      <div class="legend-row"><span class="legend-dot" style="background:var(--amber);"></span>
-        <div><div class="ltitle">Regular &rarr; 70 pts</div><div class="ldesc">Presenta deterioro leve, no urgente.</div></div></div>
-      <div class="legend-row"><span class="legend-dot" style="background:var(--red);"></span>
-        <div><div class="ltitle">Falla &rarr; 0 pts</div><div class="ldesc">Requiere intervención.</div></div></div>
-      <div class="legend-row"><span class="legend-dot" style="background:var(--steel);"></span>
-        <div><div class="ltitle">No tiene &rarr; se excluye</div><div class="ldesc">No aplica para esa sede; no afecta el promedio.</div></div></div>
+  <div class="cal-legend-sector-grid">
+    <div class="legend-card-wrap">
+      <div class="legend-card">
+        <h3>Lógica de puntaje</h3>
+        <div class="legend-row"><span class="legend-dot" style="background:var(--green);"></span>
+          <div><div class="ltitle">Bueno &rarr; 100 pts</div><div class="ldesc">El ítem cumple sin observaciones.</div></div></div>
+        <div class="legend-row"><span class="legend-dot" style="background:var(--amber);"></span>
+          <div><div class="ltitle">Regular &rarr; 70 pts</div><div class="ldesc">Presenta deterioro leve, no urgente.</div></div></div>
+        <div class="legend-row"><span class="legend-dot" style="background:var(--red);"></span>
+          <div><div class="ltitle">Falla &rarr; 0 pts</div><div class="ldesc">Requiere intervención.</div></div></div>
+        <div class="legend-row"><span class="legend-dot" style="background:var(--steel);"></span>
+          <div><div class="ltitle">No tiene &rarr; se excluye</div><div class="ldesc">No aplica para esa sede; no afecta el promedio.</div></div></div>
 
-      <div class="scoring-box">
-        <div class="stitle">Cómo se calcula</div>
-        <div class="srow"><span>Puntaje de sede</span><b>promedio directo de todos los ítems</b></div>
-        <div class="srow"><span>Vista por sector</span><b>solo informativa</b></div>
-      </div>
+        <div class="scoring-box">
+          <div class="stitle">Cómo se calcula</div>
+          <div class="srow"><span>Puntaje de sede</span><b>promedio directo de todos los ítems</b></div>
+          <div class="srow"><span>Vista por sector</span><b>solo informativa</b></div>
+        </div>
 
-      <div class="scoring-box">
-        <div class="stitle">Rangos de clasificación</div>
-        <div class="srow"><span>90&ndash;100</span><b style="color:#7FE0A0;">Óptimo</b></div>
-        <div class="srow"><span>75&ndash;89</span><b style="color:#D9C97A;">Bueno</b></div>
-        <div class="srow"><span>60&ndash;74</span><b style="color:#E8B25C;">Atención · mejora corto plazo</b></div>
-        <div class="srow"><span>0&ndash;59</span><b style="color:#F09488;">Crítico · intervención urgente</b></div>
+        <div class="scoring-box">
+          <div class="stitle">Rangos de clasificación</div>
+          <div class="srow"><span>90&ndash;100</span><b style="color:#7FE0A0;">Óptimo</b></div>
+          <div class="srow"><span>75&ndash;89</span><b style="color:#D9C97A;">Bueno</b></div>
+          <div class="srow"><span>60&ndash;74</span><b style="color:#E8B25C;">Atención · mejora corto plazo</b></div>
+          <div class="srow"><span>0&ndash;59</span><b style="color:#F09488;">Crítico · intervención urgente</b></div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
-<div class="section">
-  <h2>Comparación por sector (todas las sedes)</h2>
-  <div class="table-card cal-sector-comp-compact" id="sector-comparison">
-    <div class="loader">Cargando comparación...</div>
+    <div>
+      <h2>Comparación por sector (todas las sedes)</h2>
+      <div class="table-card cal-sector-comp-compact" id="sector-comparison">
+        <div class="loader">Cargando comparación...</div>
+      </div>
+    </div>
   </div>
 </div>
 
